@@ -1,0 +1,118 @@
+### Variables
+@apibaseurl = http://localhost:8000
+@username = test_user
+@password = test_password
+
+### Obtener token de autenticación
+# @name auth
+POST {{apibaseurl}}/token
+Content-Type: application/x-www-form-urlencoded
+
+username={{username}}&password={{password}}
+
+### Guardar el token para solicitudes posteriores
+@token = {{auth.response.body.access_token}}
+
+### Insertar una cámara usando coordenadas directamente
+POST {{apibaseurl}}/camaras/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "CAM-TEST-001",
+    "nombre_esp": "Cámara de Prueba",
+    "ubicacion": "Calle de Prueba #123",
+    "tipo": "Prueba",
+    "longitud": -74.0616,
+    "latitud": 4.6737
+}
+
+### Insertar una cámara usando WKT
+POST {{apibaseurl}}/camaras/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "CAM-TEST-002",
+    "nombre_esp": "Cámara de Prueba WKT",
+    "ubicacion": "Calle de Prueba #456",
+    "tipo": "Prueba WKT",
+    "longitud": -74.0617,
+    "latitud": 4.6738,
+    "geometry": "POINT(-74.0617 4.6738)"
+}
+
+### Insertar un cable corporativo usando puntos
+POST {{apibaseurl}}/cable_corporativo/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "CABLE-TEST-001",
+    "name": "Cable de Prueba",
+    "nombre_esp": "Cable Prueba",
+    "colocacion": "Prueba",
+    "puntos": [
+        {"longitud": -74.0617, "latitud": 4.6737},
+        {"longitud": -74.0618, "latitud": 4.6738},
+        {"longitud": -74.0619, "latitud": 4.6739}
+    ]
+}
+
+### Insertar un cable corporativo usando WKT
+POST {{apibaseurl}}/cable_corporativo/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "CABLE-TEST-002",
+    "name": "Cable de Prueba WKT",
+    "nombre_esp": "Cable Prueba WKT",
+    "colocacion": "Prueba WKT",
+    "geometry": "LINESTRING(-74.0620 4.6740, -74.0621 4.6741, -74.0622 4.6742)"
+}
+
+### Insertar una central usando coordenadas directamente
+POST {{apibaseurl}}/centrales/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "CTL-TEST-001",
+    "nombre": "Central de Prueba",
+    "codigo": "CTL-P-001",
+    "direccion": "Dirección de Prueba #123",
+    "tipo": "Prueba",
+    "longitud": -74.0630,
+    "latitud": 4.6750
+}
+
+### Insertar un empalme usando coordenadas directamente
+POST {{apibaseurl}}/empalmes/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "EMP-TEST-001",
+    "nombre": "Empalme de Prueba",
+    "tipo": "Prueba",
+    "capacidad": "48 hilos",
+    "ubicacion": "Ubicación de Prueba",
+    "longitud": -74.0640,
+    "latitud": 4.6760
+}
+
+### Insertar una reserva usando coordenadas directamente
+POST {{apibaseurl}}/reservas/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "RES-TEST-001",
+    "nombre": "Reserva de Prueba",
+    "tipo": "Prueba",
+    "capacidad": "96 hilos",
+    "ubicacion": "Ubicación de Prueba para Reserva",
+    "longitud": -74.0650,
+    "latitud": 4.6770
+}

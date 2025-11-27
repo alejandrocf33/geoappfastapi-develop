@@ -1,0 +1,123 @@
+# Pruebas de API GeoAPIs
+
+@apibaseurl=http://localhost:8000
+
+# Primero, obtenemos un token de autenticación
+# @name login
+POST {{apibaseurl}}/token
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=admin123
+
+# Extraemos el token de la respuesta
+@token = {{login.response.body.access_token}}
+
+### 1. APIs de consulta con caché
+
+# 1.1 Consultar cámaras cercanas a un punto
+GET {{apibaseurl}}/api/camaras?lat=4.6737&lon=-74.0617&radio_interno=0&radio_externo=1000
+Authorization: Bearer {{token}}
+
+# 1.2 Consultar todas las cámaras
+GET {{apibaseurl}}/api/all_camaras
+Authorization: Bearer {{token}}
+
+# 1.3 Consultar cables cercanos a un punto
+GET {{apibaseurl}}/api/cables?lat=4.6737&lon=-74.0617&radio_interno=0&radio_externo=1000
+Authorization: Bearer {{token}}
+
+# 1.4 Consultar todos los cables
+GET {{apibaseurl}}/api/all_cables
+Authorization: Bearer {{token}}
+
+### 2. APIs de lógica espacial
+
+# 2.1 Detectar cámaras en falla
+GET {{apibaseurl}}/api/camaras_en_falla?lat=4.6737&lon=-74.0617&distancia=1000&desviacion=500
+Authorization: Bearer {{token}}
+
+# 2.2 Buscar cables cercanos
+GET {{apibaseurl}}/api/cables_cercanos?lat=4.6737&lon=-74.0617&distancia=500&limite=10&incluir_troncales=true
+Authorization: Bearer {{token}}
+
+# 2.3 Calcular ruta en red
+GET {{apibaseurl}}/api/linea_en_ruta_red?lat=4.6737&lon=-74.0617&distancia=1000
+Authorization: Bearer {{token}}
+
+### 3. APIs de escritura
+
+# 3.1 Insertar una cámara usando coordenadas directas
+POST {{apibaseurl}}/api/camaras/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "CAM-TEST-001",
+    "nombre_esp": "Cámara de Prueba",
+    "ubicacion": "Calle de Prueba #123",
+    "tipo": "Prueba",
+    "longitud": -74.0616,
+    "latitud": 4.6737
+}
+
+# 3.2 Insertar un cable usando puntos
+POST {{apibaseurl}}/api/cable_corporativo/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "CABLE-TEST-001",
+    "name": "Cable de Prueba",
+    "nombre_esp": "Cable Prueba",
+    "colocacion": "Prueba",
+    "puntos": [
+        {"longitud": -74.0617, "latitud": 4.6737},
+        {"longitud": -74.0618, "latitud": 4.6738},
+        {"longitud": -74.0619, "latitud": 4.6739}
+    ]
+}
+
+# 3.3 Insertar una central
+POST {{apibaseurl}}/api/centrales/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "CTL-TEST-001",
+    "nombre": "Central de Prueba",
+    "codigo": "CTL-P-001",
+    "direccion": "Dirección de Prueba #123",
+    "tipo": "Prueba",
+    "longitud": -74.0630,
+    "latitud": 4.6750
+}
+
+# 3.4 Insertar un empalme
+POST {{apibaseurl}}/api/empalmes/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "EMP-TEST-001",
+    "nombre": "Empalme de Prueba",
+    "tipo": "Prueba",
+    "capacidad": "48 hilos",
+    "ubicacion": "Ubicación de Prueba",
+    "longitud": -74.0640,
+    "latitud": 4.6760
+}
+
+# 3.5 Insertar una reserva
+POST {{apibaseurl}}/api/reservas/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "id_texto": "RES-TEST-001",
+    "nombre": "Reserva de Prueba",
+    "tipo": "Prueba",
+    "capacidad": "96 hilos",
+    "ubicacion": "Ubicación de Prueba para Reserva",
+    "longitud": -74.0650,
+    "latitud": 4.6770
+}

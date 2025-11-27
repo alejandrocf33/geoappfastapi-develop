@@ -1,0 +1,28 @@
+#consulta camaras
+http://localhost:8000/api/camaras?lat=4.6661632&lon=-74.1474304&radio_interno=100&radio_externo=300
+http://localhost:8000/api/camaras
+http://localhost:8000/api/all_camaras
+#consulta cables
+http://localhost:8000/api/cables?lat=4.6661632&lon=-74.1474304&radio_externo=1000
+http://localhost:8000/api/cables
+http://localhost:8000/api/all_cables
+#consulta centrales
+http://localhost:8000/api/centrales?lat=4.6661632&lon=-74.1474304&radio_externo=1000
+http://localhost:8000/api/all_centrales
+#consulta empalmes
+http://localhost:8000/api/empalmes?lat=4.6661632&lon=-74.1474304&radio_interno=100&radio_externo=1000
+http://localhost:8000/api/empalmes
+http://localhost:8000/api/all_empalmes
+#consulta reservas
+http://localhost:8000/api/reservas?lat=4.6661632&lon=-74.1474304&radio_interno=100&radio_externo=1000
+http://localhost:8000/api/reservas
+http://localhost:8000/api/all_reservas
+
+#obtener línea y punto específico en la red de cables a una distancia
+http://localhost:8000/api/linea_en_ruta_red?lon=-74.1474304&lat=4.6661632&distancia=2000
+
+#consulta cables cercanos (excluyendo troncales por defecto)
+http://localhost:8000/api/cables_cercanos?lon=-74.1474304&lat=4.6661632&distancia=2000&limite=1
+
+#consulta cables cercanos (incluyendo troncales)
+http://localhost:8000/api/cables_cercanos?lon=-74.1474304&lat=4.6661632&distancia=2000&limite=100&incluir_troncales=true

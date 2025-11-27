@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Red de Cables ETB</title>
+    <link rel="icon" type="image/svg+xml" href="etb.svg">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #header {
+            background-color: #1a3883;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #logo {
+            height: 40px;
+        }
+        .container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 60px);
+        }
+        #sidebar {
+            width: 300px;
+            background-color: #f4f4f4;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+        .layer-group {
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .layer-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #1a3883;
+        }
+        .layer-item {
+            margin-bottom: 8px;
+        }
+        .layer-item label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .layer-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .params-container {
+            margin-top: 10px;
+            padding-left: 25px;
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        .param-item {
+            margin-bottom: 5px;
+        }
+        .param-item label {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 0.9em;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.error {
+            background-color: #ffebee;
+        }
+        .status.active {
+            display: block;
+        }
+        .loading {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            border-top-color: #1a3883;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #statusMessage {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <img id="logo" src="etb.svg" alt="ETB Logo">
+        <h1>Visor de Red de Cables</h1>
+        <div></div> <!-- Para mantener el título centrado -->
+    </div>
+    
+    <div class="container">
+        <div id="sidebar">
+            <div class="status" id="locationStatus">
+                <span id="locationIcon" class="loading"></span>
+                <span id="locationMessage">Obteniendo ubicación actual...</span>
+            </div>
+            <!-- La sección de configuración de red ha sido eliminada -->
+            
+            <div class="layer-group">
+                <div class="layer-header">Infraestructura</div>
+                <div class="layer-item">
+                    <label>
+                        <input type="checkbox" id="checkCamaras" onchange="toggleLayer('camaras')">
+                        Cámaras
+                    </label>
+                    <div class="params-container" id="paramsContainerCamaras">
+                        <div class="param-item">
+                            <label for="camRadioInterno">Radio Interno (m)</label>
+                            <input type="number" id="camRadioInterno" value="100" min="0">
+                        </div>
+                        <div class="param-item">
+                            <label for="camRadioExterno">Radio Externo (m)</label>
+                            <input type="number" id="camRadioExterno" value="300" min="0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="layer-item">
+                    <label>
+                        <input type="checkbox" id="checkCables" onchange="toggleLayer('cables')">
+                        Cables
+                    </label>
+                    <div class="params-container" id="paramsContainerCables">
+                        <div class="param-item">
+                            <label for="cabRadioExterno">Radio de Búsqueda (m)</label>
+                            <input type="number" id="cabRadioExterno" value="1000" min="0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="layer-item">
+                    <label>
+                        <input type="checkbox" id="checkCentrales" onchange="toggleLayer('centrales')">
+                        Centrales
+                    </label>
+                    <div class="params-container" id="paramsContainerCentrales">
+                        <div class="param-item">
+                            <label for="cenRadioExterno">Radio de Búsqueda (m)</label>
+                            <input type="number" id="cenRadioExterno" value="1000" min="0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="layer-item">
+                    <label>
+                        <input type="checkbox" id="checkEmpalmes" onchange="toggleLayer('empalmes')">
+                        Empalmes
+                    </label>
+                    <div class="params-container" id="paramsContainerEmpalmes">
+                        <div class="param-item">
+                            <label for="empRadioInterno">Radio Interno (m)</label>
+                            <input type="number" id="empRadioInterno" value="100" min="0">
+                        </div>
+                        <div class="param-item">
+                            <label for="empRadioExterno">Radio Externo (m)</label>
+                            <input type="number" id="empRadioExterno" value="1000" min="0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="layer-item">
+                    <label>
+                        <input type="checkbox" id="checkReservas" onchange="toggleLayer('reservas')">
+                        Reservas
+                    </label>
+                    <div class="params-container" id="paramsContainerReservas">
+                        <div class="param-item">
+                            <label for="resRadioInterno">Radio Interno (m)</label>
+                            <input type="number" id="resRadioInterno" value="100" min="0">
+                        </div>
+                        <div class="param-item">
+                            <label for="resRadioExterno">Radio Externo (m)</label>
+                            <input type="number" id="resRadioExterno" value="1000" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="layer-group">
+                <div class="layer-header">Consultas de Cables</div>
+                <div class="layer-item">
+                    <label>
+                        <input type="checkbox" id="checkCablesCercanos" onchange="toggleLayer('cablesCercanos')">
+                        Cables Cercanos
+                    </label>
+                    <div class="params-container" id="paramsContainerCablesCercanos">
+                        <div class="param-item">
+                            <label for="cabCerDistancia">Distancia (m)</label>
+                            <input type="number" id="cabCerDistancia" value="2000" min="0">
+                        </div>
+                        <div class="param-item">
+                            <label for="cabCerLimite">Límite de Resultados</label>
+                            <input type="number" id="cabCerLimite" value="100" min="1">
+                        </div>
+                        <div class="param-item">
+                            <label>
+                                <input type="checkbox" id="cabCerTroncales">
+                                Incluir Troncales
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Se eliminaron las opciones de Punto Cercano en Cable y Punto a Distancia por Cable -->
+                  <div class="layer-item">
+                    <label>
+                        <input type="checkbox" id="checkLineaRutaRed" onchange="toggleLayer('lineaRutaRed')">
+                        Punto Final en Red (sin ruta)
+                    </label>
+                    <div class="params-container" id="paramsContainerLineaRutaRed">
+                        <div class="param-item">
+                            <label for="lineaRutaDist">Distancia (m)</label>
+                            <input type="number" id="lineaRutaDist" value="2000" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+    </div>
+    
+    <!-- Mensaje de estado para feedback al usuario -->
+    <div id="statusMessage"></div>
+
+    <script>
+        // Variables globales
+        let map;
+        let userMarker;
+        let currentPosition = null;
+        const layers = {};
+        const apiBaseUrl = 'https://web-production-ddf8.up.railway.app/api';
+        
+        // Credenciales para autenticación de la API
+        const username = 'u7Qw9z!2pL4vXr6s';
+        const password = 'A3$k8z!mQ2@vXr7pL4w9Zb6sT1#nJ5eR';
+        const authCredentials = btoa(`${username}:${password}`);
+        
+        // Inicialización del mapa
+        function initMap() {
+            // Ubicación por defecto (Bogotá)
+            const defaultPosition = { lat: 4.6661632, lng: -74.1474304 };
+            
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: defaultPosition,
+                zoom: 15,
+                mapTypeId: 'roadmap',
+                mapTypeControl: true,
+                streetViewControl: false,
+                fullscreenControl: true
+            });
+            
+            // Intentar obtener la ubicación actual del usuario
+            getUserLocation();
+            
+            // Inicializar capas vacías
+            initLayers();
+        }
+        
+        // Obtener ubicación actual del usuario
+        function getUserLocation() {
+            document.getElementById('locationStatus').classList.add('active');
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        currentPosition = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        // Centrar mapa y añadir marcador
+                        map.setCenter(currentPosition);
+                        
+                        if (userMarker) {
+                            userMarker.setPosition(currentPosition);
+                        } else {
+                            userMarker = new google.maps.Marker({
+                                position: currentPosition,
+                                map: map,
+                                title: 'Tu ubicación',
+                                icon: {
+                                    path: google.maps.SymbolPath.CIRCLE,
+                                    scale: 10,
+                                    fillColor: '#4285F4',
+                                    fillOpacity: 1,
+                                    strokeColor: 'white',
+                                    strokeWeight: 2
+                                },
+                                zIndex: 1000
+                            });
+                        }
+                        
+                        document.getElementById('locationIcon').classList.remove('loading');
+                        document.getElementById('locationMessage').textContent = 'Ubicación actual obtenida';
+                        
+                        // Después de 3 segundos, ocultar el mensaje
+                        setTimeout(() => {
+                            document.getElementById('locationStatus').classList.remove('active');
+                        }, 3000);
+                    },
+                    (error) => {
+                        console.error('Error al obtener ubicación:', error);
+                        document.getElementById('locationIcon').classList.remove('loading');
+                        document.getElementById('locationMessage').textContent = 
+                            'No se pudo obtener la ubicación. Usando ubicación por defecto.';
+                        document.getElementById('locationStatus').classList.add('error');
+                        
+                        // Usar ubicación por defecto
+                        currentPosition = { lat: 4.6661632, lng: -74.1474304 };
+                    }
+                );
+            } else {
+                document.getElementById('locationIcon').classList.remove('loading');
+                document.getElementById('locationMessage').textContent = 
+                    'Geolocalización no soportada en este navegador';
+                document.getElementById('locationStatus').classList.add('error');
+                
+                // Usar ubicación por defecto
+                currentPosition = { lat: 4.6661632, lng: -74.1474304 };
+            }
+        }
+        
+        // Inicializar capas vacías
+        function initLayers() {
+            layers.camaras = { active: false, features: [] };
+            layers.cables = { active: false, features: [] };
+            layers.centrales = { active: false, features: [] };
+            layers.empalmes = { active: false, features: [] };
+            layers.reservas = { active: false, features: [] };
+            layers.cablesCercanos = { active: false, features: [] };
+            // Se eliminaron las capas puntoDistancia y puntoCercano
+            layers.lineaRutaRed = { active: false, features: [] };
+        }
+        
+        // Obtener nombre de visualización para una capa
+        function getCapaDisplayName(layerName) {
+            const displayNames = {
+                'camaras': 'Cámaras',
+                'cables': 'Cables',
+                'centrales': 'Centrales',
+                'empalmes': 'Empalmes',
+                'reservas': 'Reservas',
+                'cablesCercanos': 'Cables Cercanos',
+                'lineaRutaRed': 'Línea en Ruta de Red'
+            };
+            return displayNames[layerName] || layerName;
+        }
+        
+        // Mostrar mensaje de estado
+        function showStatusMessage(message, isError = false) {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            statusElement.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
+            statusElement.style.display = 'block';
+            
+            // Auto-ocultar después de 3 segundos
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Toggle capas
+        function toggleLayer(layerName) {
+            const checkbox = document.getElementById(`check${layerName.charAt(0).toUpperCase() + layerName.slice(1)}`);
+            const paramsContainer = document.getElementById(`paramsContainer${layerName.charAt(0).toUpperCase() + layerName.slice(1)}`);
+            
+            layers[layerName].active = checkbox.checked;
+            
+            // Mostrar/ocultar parámetros
+            if (paramsContainer) {
+                if (checkbox.checked) {
+                    paramsContainer.classList.add('active');
+                } else {
+                    paramsContainer.classList.remove('active');
+                }
+            }
+            
+            // Limpiar capa anterior
+            clearLayerFeatures(layerName);
+            
+            // Si está activado, cargar datos
+            if (checkbox.checked) {
+                loadLayerData(layerName);
+            }
+        }
+        
+        // Limpiar características de una capa
+        function clearLayerFeatures(layerName) {
+            if (layers[layerName].features && layers[layerName].features.length) {
+                layers[layerName].features.forEach(feature => {
+                    if (feature.setMap) {
+                        feature.setMap(null);
+                    }
+                });
+                layers[layerName].features = [];
+            }
+        }
+        
+        // Cargar datos de una capa
+        function loadLayerData(layerName) {
+            if (!currentPosition) {
+                alert('Por favor, espera a que se obtenga la ubicación actual');
+                return;
+            }
+            
+            let url;
+            
+            switch(layerName) {
+                case 'camaras':
+                    const camRI = document.getElementById('camRadioInterno').value;
+                    const camRE = document.getElementById('camRadioExterno').value;
+                    url = `${apiBaseUrl}/camaras?lat=${currentPosition.lat}&lon=${currentPosition.lng}&radio_interno=${camRI}&radio_externo=${camRE}`;
+                    break;
+                    
+                case 'cables':
+                    const cabRE = document.getElementById('cabRadioExterno').value;
+                    url = `${apiBaseUrl}/cables?lat=${currentPosition.lat}&lon=${currentPosition.lng}&radio_externo=${cabRE}`;
+                    break;
+                    
+                case 'centrales':
+                    const cenRE = document.getElementById('cenRadioExterno').value;
+                    url = `${apiBaseUrl}/centrales?lat=${currentPosition.lat}&lon=${currentPosition.lng}&radio_externo=${cenRE}`;
+                    break;
+                    
+                case 'empalmes':
+                    const empRI = document.getElementById('empRadioInterno').value;
+                    const empRE = document.getElementById('empRadioExterno').value;
+                    url = `${apiBaseUrl}/empalmes?lat=${currentPosition.lat}&lon=${currentPosition.lng}&radio_interno=${empRI}&radio_externo=${empRE}`;
+                    break;
+                    
+                case 'reservas':
+                    const resRI = document.getElementById('resRadioInterno').value;
+                    const resRE = document.getElementById('resRadioExterno').value;
+                    url = `${apiBaseUrl}/reservas?lat=${currentPosition.lat}&lon=${currentPosition.lng}&radio_interno=${resRI}&radio_externo=${resRE}`;
+                    break;
+                    
+                case 'cablesCercanos':
+                    const ccDist = document.getElementById('cabCerDistancia').value;
+                    const ccLim = document.getElementById('cabCerLimite').value;
+                    const ccTronc = document.getElementById('cabCerTroncales').checked;
+                    url = `${apiBaseUrl}/cables_cercanos?lon=${currentPosition.lng}&lat=${currentPosition.lat}&distancia=${ccDist}&limite=${ccLim}${ccTronc ? '&incluir_troncales=true' : ''}`;
+                    break;
+                    
+                case 'lineaRutaRed':
+                    const lrDist = document.getElementById('lineaRutaDist').value;
+                    
+                    // Validar distancia
+                    if (!lrDist || isNaN(lrDist) || parseFloat(lrDist) <= 0) {
+                        alert('Por favor ingrese una distancia válida mayor a cero.');
+                        return;
+                    }
+                    
+                    // Validar posición actual
+                    if (!currentPosition || !currentPosition.lat || !currentPosition.lng) {
+                        alert('No hay una posición actual seleccionada. Por favor haga clic en el mapa para establecer un punto de inicio.');
+                        return;
+                    }
+                    
+                    console.log('Llamando a linea_en_ruta_red con:', {
+                        lon: currentPosition.lng,
+                        lat: currentPosition.lat,
+                        distancia: lrDist
+                    });
+                    
+                    url = `${apiBaseUrl}/linea_en_ruta_red?lon=${currentPosition.lng}&lat=${currentPosition.lat}&distancia=${lrDist}`;
+                    break;
+                    
+                default:
+                    console.error(`Capa desconocida: ${layerName}`);
+                    return;
+            }
+            
+            // Mostrar indicador de carga
+            showStatusMessage(`Cargando ${getCapaDisplayName(layerName)}...`);
+            
+            // Fetch data from API with authentication
+            fetch(url, {
+                headers: {
+                    'Authorization': `Basic ${authCredentials}`
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    throw new Error('No autorizado: credenciales incorrectas');
+                }
+                if (response.status === 404) {
+                    throw new Error('Recurso no encontrado. El punto podría estar fuera de la red.');
+                }
+                if (!response.ok) {
+                    throw new Error(`Error en la respuesta: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Verificar si hay un mensaje de error en la respuesta
+                if (data && data.status === 'error') {
+                    throw new Error(data.message || 'Error desconocido en la respuesta');
+                }
+                
+                displayLayerData(layerName, data);
+            })
+            .catch(error => {
+                console.error(`Error al cargar ${getCapaDisplayName(layerName)}:`, error);
+                showStatusMessage(`Error al cargar ${getCapaDisplayName(layerName)}: ${error.message}`, true);
+                
+                // Desmarcar checkbox si hay error
+                document.getElementById(`check${layerName.charAt(0).toUpperCase() + layerName.slice(1)}`).checked = false;
+                layers[layerName].active = false;
+                
+                if (document.getElementById(`paramsContainer${layerName.charAt(0).toUpperCase() + layerName.slice(1)}`)) {
+                    document.getElementById(`paramsContainer${layerName.charAt(0).toUpperCase() + layerName.slice(1)}`).classList.remove('active');
+                }
+            });
+        }
+        
+        // Mostrar datos de una capa en el mapa
+        function displayLayerData(layerName, data) {
+            clearLayerFeatures(layerName);
+            
+            switch(layerName) {
+                case 'camaras':
+                case 'cables':
+                case 'centrales':
+                case 'empalmes':
+                case 'reservas':
+                case 'cablesCercanos':
+                    displayGeoJsonLayer(layerName, data);
+                    break;
+                
+                // Se eliminó el caso puntoDistancia
+                
+                case 'lineaRutaRed':
+                    displayLineaRutaRed(data);
+                    break;
+                    
+                default:
+                    console.error(`Visualización no implementada para capa: ${layerName}`);
+            }
+        }
+        
+        // Mostrar GeoJSON genérico
+        function displayGeoJsonLayer(layerName, geoJsonData) {
+            const features = [];
+            
+            // Configuración por tipo de capa
+            let style = {};
+            
+            switch(layerName) {
+                case 'camaras':
+                    style = {
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 7,
+                            fillColor: '#FF0000',
+                            fillOpacity: 0.7,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 1
+                        }
+                    };
+                    break;
+                    
+                case 'cables':
+                    style = {
+                        strokeColor: '#1E88E5',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 3
+                    };
+                    break;
+                    
+                case 'cablesCercanos':
+                    style = {
+                        strokeColor: '#4CAF50',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 4
+                    };
+                    break;
+                    
+                case 'centrales':
+                    style = {
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 10,
+                            fillColor: '#9C27B0',
+                            fillOpacity: 0.8,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 2
+                        }
+                    };
+                    break;
+                    
+                case 'empalmes':
+                    style = {
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 6,
+                            fillColor: '#FF9800',
+                            fillOpacity: 0.7,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 1
+                        }
+                    };
+                    break;
+                    
+                case 'reservas':
+                    style = {
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 5,
+                            fillColor: '#607D8B',
+                            fillOpacity: 0.7,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 1
+                        }
+                    };
+                    break;
+            }
+            
+            // Para el caso de FeatureCollection
+            if (geoJsonData.type === 'FeatureCollection') {
+                geoJsonData.features.forEach(feature => {
+                    const geoFeature = createGoogleMapsFeature(feature, style);
+                    if (geoFeature) {
+                        features.push(geoFeature);
+                    }
+                });
+            } 
+            // Para respuestas anidadas de FeatureCollection
+            else if (geoJsonData.camaras_cercanas || geoJsonData.camaras_en_radio) {
+                if (geoJsonData.camaras_cercanas && geoJsonData.camaras_cercanas.features) {
+                    const cercanaStyle = {
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 7,
+                            fillColor: '#FF5722',
+                            fillOpacity: 0.7,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 1
+                        }
+                    };
+                    
+                    geoJsonData.camaras_cercanas.features.forEach(feature => {
+                        const geoFeature = createGoogleMapsFeature(feature, cercanaStyle);
+                        if (geoFeature) {
+                            features.push(geoFeature);
+                        }
+                    });
+                }
+                
+                if (geoJsonData.camaras_en_radio && geoJsonData.camaras_en_radio.features) {
+                    const radioStyle = {
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 7,
+                            fillColor: '#E91E63',
+                            fillOpacity: 0.7,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 1
+                        }
+                    };
+                    
+                    geoJsonData.camaras_en_radio.features.forEach(feature => {
+                        const geoFeature = createGoogleMapsFeature(feature, radioStyle);
+                        if (geoFeature) {
+                            features.push(geoFeature);
+                        }
+                    });
+                }
+            }
+            
+            // Guardar referencia a las características
+            layers[layerName].features = features;
+        }
+        
+        // Crear característica para Google Maps desde GeoJSON
+        function createGoogleMapsFeature(feature, style) {
+            if (!feature.geometry) return null;
+            
+            let mapObject;
+            
+            switch(feature.geometry.type) {
+                case 'Point':
+                    const position = {
+                        lat: feature.geometry.coordinates[1],
+                        lng: feature.geometry.coordinates[0]
+                    };
+                    
+                    mapObject = new google.maps.Marker({
+                        position: position,
+                        map: map,
+                        icon: style.icon
+                    });
+                    break;
+                    
+                case 'LineString':
+                    const path = feature.geometry.coordinates.map(coord => ({
+                        lat: coord[1],
+                        lng: coord[0]
+                    }));
+                    
+                    mapObject = new google.maps.Polyline({
+                        path: path,
+                        map: map,
+                        ...style
+                    });
+                    break;
+                    
+                case 'Polygon':
+                    const polygonPaths = feature.geometry.coordinates.map(ring => 
+                        ring.map(coord => ({
+                            lat: coord[1],
+                            lng: coord[0]
+                        }))
+                    );
+                    
+                    mapObject = new google.maps.Polygon({
+                        paths: polygonPaths,
+                        map: map,
+                        ...style,
+                        fillOpacity: 0.35
+                    });
+                    break;
+                    
+                default:
+                    console.warn(`Tipo de geometría no soportado: ${feature.geometry.type}`);
+                    return null;
+            }
+            
+            // Añadir información del feature
+            if (feature.properties) {
+                const infoContent = createInfoWindowContent(feature.properties);
+                const infoWindow = new google.maps.InfoWindow({
+                    content: infoContent
+                });
+                
+                mapObject.addListener('click', () => {
+                    infoWindow.open(map, mapObject);
+                });
+            }
+            
+            return mapObject;
+        }
+        
+        // Crear contenido para InfoWindow
+        function createInfoWindowContent(properties) {
+            let content = '<div style="max-width: 250px;">';
+            
+            // Título si existe
+            if (properties.nombre_esp || properties.id_texto) {
+                content += `<h3 style="margin: 0 0 8px;">${properties.nombre_esp || properties.id_texto || 'ID: ' + properties.id}</h3>`;
+            }
+            
+            // Tabla de propiedades
+            content += '<table style="width:100%; border-collapse: collapse;">';
+            
+            for (let key in properties) {
+                // Excluir propiedades muy largas o irrelevantes
+                if (key !== 'id' && key !== 'distancia_metros') {
+                    const value = properties[key];
+                    if (value !== null && value !== undefined && typeof value !== 'object') {
+                        content += `
+                            <tr>
+                                <td style="font-weight: bold; padding: 3px; border-bottom: 1px solid #eee;">${key}</td>
+                                <td style="padding: 3px; border-bottom: 1px solid #eee;">${value}</td>
+                            </tr>
+                        `;
+                    }
+                }
+            }
+            
+            // Agregar distancia si está disponible
+            if (properties.distancia || properties.distancia_metros) {
+                content += `
+                    <tr>
+                        <td style="font-weight: bold; padding: 3px;">Distancia</td>
+                        <td style="padding: 3px;">${properties.distancia || properties.distancia_metros} m</td>
+                    </tr>
+                `;
+            }
+            
+            content += '</table></div>';
+            return content;
+        }
+        
+        // Utilitario para debugging de GeoJSON
+        function debugGeoJSON(name, geoData) {
+            console.groupCollapsed(`Debug GeoJSON: ${name}`);
+            
+            try {
+                console.log('Tipo de datos:', typeof geoData);
+                console.log('Es array?', Array.isArray(geoData));
+                
+                if (geoData && typeof geoData === 'object') {
+                    console.log('Estructura:', JSON.stringify(geoData));
+                    
+                    if (geoData.type) {
+                        console.log('Tipo GeoJSON:', geoData.type);
+                    }
+                    
+                    if (geoData.geometry) {
+                        console.log('Tipo geometría:', geoData.geometry.type);
+                        
+                        if (geoData.geometry.coordinates) {
+                            console.log('Longitud coordenadas:', 
+                                Array.isArray(geoData.geometry.coordinates) ? 
+                                geoData.geometry.coordinates.length : 'No es array');
+                            
+                            if (geoData.geometry.coordinates.length > 0) {
+                                console.log('Muestra coordenada:', JSON.stringify(geoData.geometry.coordinates[0]));
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error al inspeccionar GeoJSON:', err);
+            }
+            
+            console.groupEnd();
+        }
+          // Mostrar línea en ruta de red
+        function displayLineaRutaRed(data) {
+            try {
+                console.log('Datos recibidos linea_en_ruta_red:', JSON.stringify(data));
+                
+                // Usar el utilitario de debug para analizar la estructura
+                if (data && data.linea) {
+                    debugGeoJSON('linea', data.linea);
+                }
+                if (data && data.punto_final) {
+                    debugGeoJSON('punto_final', data.punto_final);
+                }
+                
+                if (data.status === "error") {
+                    alert(`Error: ${data.message}`);
+                    return;
+                }
+                
+                // Ya no dibujamos la línea de ruta por problemas con la API
+                console.log('Omitiendo el dibujo de la ruta por solicitud del usuario');
+                showStatusMessage('La visualización de rutas ha sido desactivada');
+                
+                // No procesamos los datos de línea
+                if (data.linea && data.linea.geometry) {
+                    console.log('Ruta disponible pero no se mostrará');
+                } else {
+                    console.log('Datos de línea no encontrados o inválidos');
+                }
+                
+                // Mostrar punto final
+                if (data.punto_final && data.punto_final.geometry) {
+                    console.log('Punto final:', JSON.stringify(data.punto_final.geometry));
+                    const coordinates = data.punto_final.geometry.coordinates;
+                    
+                    // En GeoJSON, el formato es [longitud, latitud]
+                    if (Array.isArray(coordinates) && coordinates.length >= 2) {
+                        const position = {
+                            lng: parseFloat(coordinates[0]),
+                            lat: parseFloat(coordinates[1])
+                        };
+                        
+                        console.log('Posición del punto final:', position);
+                        
+                        try {
+                            const marker = new google.maps.Marker({
+                                position: position,
+                                map: map,
+                                icon: {
+                                    path: google.maps.SymbolPath.CIRCLE,
+                                    scale: 8,
+                                    fillColor: '#009688',
+                                    fillOpacity: 0.8,
+                                    strokeColor: '#FFFFFF',
+                                    strokeWeight: 2
+                                }
+                            });
+                            
+                            // Información del punto
+                            let distanciaTexto = 'No disponible';
+                            if (data.punto_final.properties && 
+                                typeof data.punto_final.properties.distancia_metros !== 'undefined') {
+                                const distancia = parseFloat(data.punto_final.properties.distancia_metros);
+                                distanciaTexto = `${distancia.toFixed(2)} m`;
+                            }
+                            
+                            const infoWindow = new google.maps.InfoWindow({
+                                content: `
+                                    <div style="max-width: 200px;">
+                                        <h3 style="margin: 0 0 8px;">Punto final</h3>
+                                        <p>Distancia: ${distanciaTexto}</p>
+                                    </div>
+                                `
+                            });
+                            
+                            marker.addListener('click', () => {
+                                infoWindow.open(map, marker);
+                            });
+                            
+                            layers.lineaRutaRed.features.push(marker);
+                        } catch (e) {
+                            console.error('Error al crear el marcador del punto final:', e);
+                            alert('Error al mostrar el punto final en el mapa');
+                        }
+                    } else {
+                        console.error('Coordenadas inválidas para el punto final:', coordinates);
+                    }
+                }
+            } catch (err) {
+                console.error('Error al mostrar línea en ruta red:', err);
+                alert('Error al procesar los datos de la ruta. Consulte la consola para más detalles.');
+            }
+        }
+    </script>
+    
+    <!-- Cargar Google Maps API -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiuVeYi-J5bkno73prw93zgDAsHqzqW-0&libraries=places&callback=initMap&loading=async">
+    </script>
+</body>
+</html>

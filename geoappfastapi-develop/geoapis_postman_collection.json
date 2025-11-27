@@ -1,0 +1,1165 @@
+{
+  "info": {
+    "name": "GeoAPIs",
+    "description": "\n    # API para gesti\u00f3n de infraestructura GEO\n    \n    ## Caracter\u00edsticas\n    \n    * **Consultas geoespaciales** - B\u00fasqueda de elementos por coordenadas y radio\n    * **Operaciones de escritura** - Creaci\u00f3n de elementos geoespaciales como c\u00e1maras, cables, centrales\n    * **An\u00e1lisis espacial** - Funciones avanzadas para an\u00e1lisis de infraestructura\n    * **Autenticaci\u00f3n b\u00e1sica** - Protecci\u00f3n de endpoints mediante autenticaci\u00f3n HTTP Basic\n    \n    ## Formatos de geometr\u00eda\n    \n    Todos los endpoints soportan dos formatos para especificar geometr\u00edas:\n    \n    1. **Coordenadas directas** - Usando los campos `latitud` y `longitud`\n    2. **Formato WKT** - Usando el campo `geometry` con geometr\u00eda Well-Known Text\n    \n    ## Respuestas GeoJSON\n    \n    Las consultas devuelven resultados en formato GeoJSON compatible con librer\u00edas de mapas.\n    ",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Operaciones de Lectura",
+      "item": [
+        {
+          "name": "Consultar c\u00e1maras",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/camaras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "camaras"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "",
+                  "description": "Latitud del punto central de b\u00fasqueda (en grados decimales)",
+                  "disabled": true
+                },
+                {
+                  "key": "lon",
+                  "value": "",
+                  "description": "Longitud del punto central de b\u00fasqueda (en grados decimales)",
+                  "disabled": true
+                },
+                {
+                  "key": "radio_interno",
+                  "value": "",
+                  "description": "Radio interno en metros (excluye elementos m\u00e1s cercanos que esta distancia)",
+                  "disabled": true
+                },
+                {
+                  "key": "radio_externo",
+                  "value": "",
+                  "description": "Radio externo en metros (l\u00edmite m\u00e1ximo de b\u00fasqueda)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene las c\u00e1maras dentro de un radio especificado alrededor de un punto. Si no se especifican par\u00e1metros, retorna las primeras 100 c\u00e1maras.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar todas las c\u00e1maras",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/all_camaras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "all_camaras"
+              ],
+              "query": []
+            },
+            "description": "Obtiene todas las c\u00e1maras registradas en la base de datos. Utiliza una cach\u00e9 de 6 horas para mejorar el rendimiento.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar cables corporativos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/cables",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cables"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "",
+                  "description": "Latitud del punto central de b\u00fasqueda (en grados decimales)",
+                  "disabled": true
+                },
+                {
+                  "key": "lon",
+                  "value": "",
+                  "description": "Longitud del punto central de b\u00fasqueda (en grados decimales)",
+                  "disabled": true
+                },
+                {
+                  "key": "radio_externo",
+                  "value": "",
+                  "description": "Radio externo en metros (l\u00edmite m\u00e1ximo de b\u00fasqueda)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene los cables corporativos dentro de un radio especificado alrededor de un punto. Si no se especifican par\u00e1metros, retorna los primeros 100 cables.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar todos los cables",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/all_cables",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "all_cables"
+              ],
+              "query": []
+            },
+            "description": "Obtiene todos los cables corporativos registrados en la base de datos. Utiliza una cach\u00e9 de 6 horas para mejorar el rendimiento.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar centrales",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/centrales",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "centrales"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "",
+                  "description": "Latitud del punto central de b\u00fasqueda (en grados decimales)",
+                  "disabled": true
+                },
+                {
+                  "key": "lon",
+                  "value": "",
+                  "description": "Longitud del punto central de b\u00fasqueda (en grados decimales)",
+                  "disabled": true
+                },
+                {
+                  "key": "radio_externo",
+                  "value": "",
+                  "description": "Radio externo en metros (l\u00edmite m\u00e1ximo de b\u00fasqueda)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene las centrales dentro de un radio especificado alrededor de un punto. Si no se especifican par\u00e1metros, retorna las primeras 100 centrales.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar todas las centrales",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/all_centrales",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "all_centrales"
+              ],
+              "query": []
+            },
+            "description": "Obtiene todas las centrales registradas en la base de datos. Utiliza una cach\u00e9 de 6 horas para mejorar el rendimiento.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar empalmes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/empalmes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empalmes"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "",
+                  "description": "Latitud del punto central de b\u00fasqueda (en grados decimales)",
+                  "disabled": true
+                },
+                {
+                  "key": "lon",
+                  "value": "",
+                  "description": "Longitud del punto central de b\u00fasqueda (en grados decimales)",
+                  "disabled": true
+                },
+                {
+                  "key": "radio_interno",
+                  "value": "",
+                  "description": "Radio interno en metros (excluye elementos m\u00e1s cercanos que esta distancia)",
+                  "disabled": true
+                },
+                {
+                  "key": "radio_externo",
+                  "value": "",
+                  "description": "Radio externo en metros (l\u00edmite m\u00e1ximo de b\u00fasqueda)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene los empalmes dentro de un radio especificado alrededor de un punto. Si no se especifican par\u00e1metros, retorna los primeros 100 empalmes.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar todos los empalmes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/all_empalmes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "all_empalmes"
+              ],
+              "query": []
+            },
+            "description": "Obtiene todos los empalmes registrados en la base de datos. Utiliza una cach\u00e9 de 6 horas para mejorar el rendimiento.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar reservas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "",
+                  "description": "Latitud del punto central de b\u00fasqueda (en grados decimales)",
+                  "disabled": true
+                },
+                {
+                  "key": "lon",
+                  "value": "",
+                  "description": "Longitud del punto central de b\u00fasqueda (en grados decimales)",
+                  "disabled": true
+                },
+                {
+                  "key": "radio_interno",
+                  "value": "",
+                  "description": "Radio interno en metros (excluye elementos m\u00e1s cercanos que esta distancia)",
+                  "disabled": true
+                },
+                {
+                  "key": "radio_externo",
+                  "value": "",
+                  "description": "Radio externo en metros (l\u00edmite m\u00e1ximo de b\u00fasqueda)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene las reservas dentro de un radio especificado alrededor de un punto. Si no se especifican par\u00e1metros, retorna las primeras 100 reservas.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar todas las reservas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/all_reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "all_reservas"
+              ],
+              "query": []
+            },
+            "description": "Obtiene todas las reservas registradas en la base de datos. Utiliza una cach\u00e9 de 6 horas para mejorar el rendimiento.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Operaciones de Escritura",
+      "item": [
+        {
+          "name": "Crear nueva c\u00e1mara",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/camaras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "camaras"
+              ],
+              "query": []
+            },
+            "description": "Inserta una nueva c\u00e1mara en la base de datos usando coordenadas geogr\u00e1ficas o geometr\u00eda WKT.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nueva central",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/centrales",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "centrales"
+              ],
+              "query": []
+            },
+            "description": "Inserta una nueva central en la base de datos.\n\nSe puede proporcionar las coordenadas directamente usando los campos 'longitud' y 'latitud',\no proporcionar la geometr\u00eda WKT usando el campo 'geometry'.\n\nLos campos 'created_by' y 'updated_by' ser\u00e1n establecidos autom\u00e1ticamente \ncon el nombre del usuario especificado en el header 'user-header' o el autenticado.\n\nEl estado inicial de la central ser\u00e1 'pendiente'.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nuevo empalme",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/empalmes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empalmes"
+              ],
+              "query": []
+            },
+            "description": "Inserta un nuevo empalme en la base de datos.\n\nSe puede proporcionar las coordenadas directamente usando los campos 'longitud' y 'latitud',\no proporcionar la geometr\u00eda WKT usando el campo 'geometry'.\n\nLos campos 'created_by' y 'updated_by' ser\u00e1n establecidos autom\u00e1ticamente \ncon el nombre del usuario especificado en el header 'user-header' o el autenticado.\n\nEl estado inicial del empalme ser\u00e1 'pendiente'.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nueva reserva",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ],
+              "query": []
+            },
+            "description": "Inserta una nueva reserva en la base de datos.\n\nSe puede proporcionar las coordenadas directamente usando los campos 'longitud' y 'latitud',\no proporcionar la geometr\u00eda WKT usando el campo 'geometry'.\n\nLos campos 'created_by' y 'updated_by' ser\u00e1n establecidos autom\u00e1ticamente \ncon el nombre del usuario especificado en el header 'user-header' o el autenticado.\n\nEl estado inicial de la reserva ser\u00e1 'pendiente'.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nueva c\u00e1mara",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/camaras/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "camaras"
+              ],
+              "query": []
+            },
+            "description": "Inserta una nueva c\u00e1mara en la base de datos usando coordenadas geogr\u00e1ficas o geometr\u00eda WKT.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nuevo cable corporativo",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/cable_corporativo/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cable_corporativo"
+              ],
+              "query": []
+            },
+            "description": "Inserta un nuevo cable corporativo en la base de datos usando una lista de puntos o geometr\u00eda WKT.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nuevo cable corporativo",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/cable_corporativo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cable_corporativo"
+              ],
+              "query": []
+            },
+            "description": "Inserta un nuevo cable corporativo en la base de datos.\n\nSe puede proporcionar una lista de puntos (al menos 2) usando el campo 'puntos',\no proporcionar la geometr\u00eda WKT usando el campo 'geometry'.\n\nLos campos 'created_by' y 'updated_by' ser\u00e1n establecidos autom\u00e1ticamente \ncon el nombre del usuario especificado en el header 'user-header' o el autenticado.\n\nEl estado inicial del cable ser\u00e1 'pendiente'.\n\nPosibles c\u00f3digos de error:\n- 401: Credenciales de autenticaci\u00f3n no v\u00e1lidas\n- 422: Datos de entrada inv\u00e1lidos (ej. n\u00famero insuficiente de puntos)\n- 500: Error interno al procesar la solicitud",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nueva central",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/centrales/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "centrales"
+              ],
+              "query": []
+            },
+            "description": "Inserta una nueva central en la base de datos usando coordenadas geogr\u00e1ficas o geometr\u00eda WKT.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nuevo empalme",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/empalmes/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "empalmes"
+              ],
+              "query": []
+            },
+            "description": "Inserta un nuevo empalme en la base de datos usando coordenadas geogr\u00e1ficas o geometr\u00eda WKT.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear nueva reserva",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ],
+              "query": []
+            },
+            "description": "Inserta una nueva reserva en la base de datos usando coordenadas geogr\u00e1ficas o geometr\u00eda WKT.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Operaciones L\u00f3gicas",
+      "item": [
+        {
+          "name": "Detectar c\u00e1maras potencialmente en falla",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/camaras_en_falla",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "camaras_en_falla"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "",
+                  "description": "Latitud del punto central de an\u00e1lisis (en grados decimales)",
+                  "disabled": false
+                },
+                {
+                  "key": "lon",
+                  "value": "",
+                  "description": "Longitud del punto central de an\u00e1lisis (en grados decimales)",
+                  "disabled": false
+                },
+                {
+                  "key": "distancia",
+                  "value": "",
+                  "description": "Radio de b\u00fasqueda inicial en metros",
+                  "disabled": false
+                },
+                {
+                  "key": "desviacion",
+                  "value": "",
+                  "description": "Distancia adicional para buscar c\u00e1maras cercanas fuera del radio inicial (en metros)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Analiza un \u00e1rea espec\u00edfica y detecta c\u00e1maras que podr\u00edan estar en falla seg\u00fan patrones de distribuci\u00f3n.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar cables cercanos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/cables_cercanos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cables_cercanos"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "",
+                  "description": "Latitud del punto central (en grados decimales)",
+                  "disabled": false
+                },
+                {
+                  "key": "lon",
+                  "value": "",
+                  "description": "Longitud del punto central (en grados decimales)",
+                  "disabled": false
+                },
+                {
+                  "key": "distancia",
+                  "value": "",
+                  "description": "Radio de b\u00fasqueda en metros",
+                  "disabled": false
+                },
+                {
+                  "key": "limite",
+                  "value": "",
+                  "description": "Cantidad m\u00e1xima de resultados a retornar",
+                  "disabled": true
+                },
+                {
+                  "key": "incluir_troncales",
+                  "value": "",
+                  "description": "Incluir cables troncales en los resultados",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene cables que est\u00e9n dentro de un radio espec\u00edfico desde un punto dado, con opci\u00f3n de filtrar por tipo.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Calcular ruta en la red",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/linea_en_ruta_red",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "linea_en_ruta_red"
+              ],
+              "query": [
+                {
+                  "key": "lon",
+                  "value": "",
+                  "description": "Longitud del punto de entrada (en grados decimales)",
+                  "disabled": false
+                },
+                {
+                  "key": "lat",
+                  "value": "",
+                  "description": "Latitud del punto de entrada (en grados decimales)",
+                  "disabled": false
+                },
+                {
+                  "key": "distancia",
+                  "value": "",
+                  "description": "Distancia a recorrer en metros por la red",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Calcula una ruta en la red de cables desde un punto de entrada hasta una distancia espec\u00edfica.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{username}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{password}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "admin",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "password",
+      "type": "string"
+    }
+  ]
+}

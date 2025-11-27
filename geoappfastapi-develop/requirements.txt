@@ -1,0 +1,9 @@
+fastapi[all]
+uvicorn[standard]
+psycopg2-binary
+geojson
+cachetools
+python-dotenv
+geoalchemy2
+SQLAlchemy
+python-multipart

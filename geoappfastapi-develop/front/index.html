@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>View Mpas Plugin</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js"
+        integrity="sha384-i61gTtaoovXtAbKjo903+O55Jkn2+RtzHtvNez+yI49HAASvznhe9sZyjaSHTau9"
+        crossorigin="anonymous"></script>
+    <script src="ofs-plugin-api.js"></script>
+    <script src="plugin-service-worker-interface.js"></script>
+    <script src="wakeup-predefined-scenarios.js"></script>
+    <script src="plugin.js"></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiuVeYi-J5bkno73prw93zgDAsHqzqW-0&libraries=places&callback=initMap&loading=async"
+        async defer></script>
+    <script>
+        // Función para mostrar alertas personalizadas
+        function showAlert(message) {
+            const popup = document.getElementById('custom-popup');
+            const messageEl = popup.querySelector('.popup-message');
+            messageEl.textContent = message;
+            popup.style.display = 'block';
+            document.activeElement.blur(); // Quita el foco del elemento activo
+        }
+
+        function closePopup() {
+            document.getElementById('custom-popup').style.display = 'none';
+        }
+
+        // Event listener para cerrar el popup con la tecla Escape o Enter
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' || event.key === 'Enter') {
+                closePopup();
+            }
+        });
+
+        // Función para procesar coordenadas de líneas de cable
+        function processLineCoords(coords, color) {
+            return coords.map(line => {
+                const path = line.map(coord => ({ lng: coord[0], lat: coord[1] }));
+                return new google.maps.Polyline({
+                    path,
+                    geodesic: true,
+                    strokeColor: color,
+                    strokeOpacity: 1.0,
+                    strokeWeight: 2,
+                    map: window.map
+                });
+            });
+        }
+
+        // Función para procesar features de cables
+        function processCableFeatures(features, color, targetLayer) {
+            features.forEach(feature => {
+                const coords = feature.geometry.coordinates;
+                const lines = processLineCoords(coords, color);
+                targetLayer.push(...lines);
+            });
+        }
+
+        const API_BASE_URL = "https://web-production-ddf8.up.railway.app"; (function ($) {
+            $(document).ready(function () {
+                var plugin = window._plugin = new OfsPlugin(true);
+                plugin.init();
+            });
+        })(jQuery);
+
+        // Función global para renderizar camaras_en_falla
+        function renderCamarasEnFalla(lat, lng, distancia, loadingOverlay) {
+            // Asegurarse de que tenemos acceso al mapa
+            const map = window.map;
+            if (!map) {
+                console.error('El mapa no está inicializado');
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+                return;
+            }
+
+            function createInfoWindow(marker, properties) {
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+            <div style="max-width: 200px;">
+                <h3 style="margin: 0 0 5px 0;">Cámara</h3>
+                <p style="margin: 0 0 3px 0;"><strong>ID:</strong> ${properties.id || 'N/A'}</p>
+                <p style="margin: 0 0 3px 0;"><strong>Estado:</strong> ${properties.estado || 'N/A'}</p>
+                <p style="margin: 0;"><strong>Ubicación:</strong> ${properties.ubicacion || 'N/A'}</p>
+            </div>
+        `
+                });
+
+                marker.addListener('click', () => {
+                    infoWindow.open(window.map, marker);
+                });
+            }
+
+            fetchWithAuth(`${API_BASE_URL}/camaras_en_falla?lat=${lat}&lon=${lng}&distancia=${distancia}`)
+                .then((res) => res.json())
+                .then((data) => {
+                    if (window.camarasEnFallaMarkers) {
+                        window.camarasEnFallaMarkers.forEach(m => m.setMap(null));
+                    }
+                    window.camarasEnFallaMarkers = [];
+
+                    // Cámaras cercanas al radio ajustado por la desviación
+                    data.camaras_cercanas.features.forEach((feature) => {
+                        const coords = feature.geometry.coordinates;
+                        const marker = new google.maps.Marker({
+                            position: { lat: coords[1], lng: coords[0] },
+                            map,
+                            icon: {
+                                url: "https://cdn-icons-png.flaticon.com/512/1828/1828665.png",
+                                scaledSize: new google.maps.Size(16, 16),
+                            },
+                        });
+                        if (feature.properties && typeof feature.properties === 'object') {
+                            createInfoWindow(marker, feature.properties);
+                        }
+                        window.camarasEnFallaMarkers.push(marker);
+                    });
+
+                    // Cámaras dentro del radio exacto
+                    data.camaras_en_radio.features.forEach((feature) => {
+                        const coords = feature.geometry.coordinates;
+                        const marker = new google.maps.Marker({
+                            position: { lat: coords[1], lng: coords[0] },
+                            map,
+                            icon: {
+                                url: "https://cdn-icons-png.flaticon.com/512/32/32339.png",
+                                scaledSize: new google.maps.Size(8, 8),
+                            },
+                        });
+                        if (feature.properties && typeof feature.properties === 'object') {
+                            createInfoWindow(marker, feature.properties);
+                        }
+                        window.camarasEnFallaMarkers.push(marker);
+                    });
+
+                    // Centrar el mapa en la nueva ubicación
+                    map.setCenter({ lat, lng });
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                }).catch((error) => {
+                    console.error('Error al consultar camaras_en_falla:', error);
+                    showAlert('Error al consultar camaras_en_falla.');
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                });
+        }
+
+        function fetchWithAuth(url, options = {}) {
+            const username = "u7Qw9z!2pL4vXr6s";
+            const password = "A3$k8z!mQ2@vXr7pL4w9Zb6sT1#nJ5eR";
+            const headers = options.headers || {};
+            headers["Authorization"] = "Basic " + btoa(`${username}:${password}`);
+            return fetch(url, { ...options, headers });
+        }
+
+        // Function to toggle layer visibility
+        function toggleLayer(layer, visible) {
+            if (Array.isArray(layer)) {
+                layer.forEach(element => {
+                    if (element instanceof google.maps.Marker || element instanceof google.maps.Polyline) {
+                        element.setMap(visible ? window.map : null);
+                    }
+                });
+            }
+        }
+
+        // Variables globales
+        let map;
+        let userLocationMarker = null;
+        const camarasLayer = [];
+        const postesLayer = [];
+        const cablesCanalizadosLayer = [];
+        const cablesAereosLayer = [];
+
+        let camarasLoaded = false;
+        let postesLoaded = false;
+        let cablesCanalizadosLoaded = false;
+        let cablesAereosLoaded = false;
+
+        // Función auxiliar para procesar features de cables
+        function processCableFeatures(features, color, targetLayer) {
+            features.forEach(feature => {
+                const coords = feature.geometry.coordinates;
+                const lines = processLineCoords(coords, color);
+                targetLayer.push(...lines);
+            });
+        }
+
+        // Function to process GeoJSON features and create markers
+        function processFeature(feature, iconUrl, targetLayer) {
+            if (!feature.geometry || !feature.geometry.coordinates) {
+                console.warn('Feature missing geometry or coordinates:', feature);
+                return;
+            }
+
+            const coordinates = feature.geometry.coordinates;
+            const lat = coordinates[1];
+            const lng = coordinates[0];
+
+            // Create marker
+            const marker = new google.maps.Marker({
+                position: { lat, lng },
+                map: window.map,
+                icon: {
+                    url: iconUrl,
+                    scaledSize: new google.maps.Size(16, 16),
+                },
+            });
+
+            // Add marker properties for info window
+            if (feature.properties) {
+                marker.properties = feature.properties;
+                createInfoWindow(marker, feature.properties);
+            }
+
+            // Add marker to the appropriate layer
+            targetLayer.push(marker);
+        }
+
+        // Función para crear un marcador en el mapa
+        function createMarker(position, icon, title = '') {
+            return new google.maps.Marker({
+                position,
+                map: window.map,
+                icon,
+                title
+            });
+        }
+
+        // Función para procesar features de puntos (cámaras, postes, etc)
+        function processPointFeatures(features, icon, targetLayer) {
+            features.forEach(feature => {
+                const coords = feature.geometry.coordinates;
+                const marker = createMarker(
+                    { lat: coords[1], lng: coords[0] },
+                    icon
+                );
+                targetLayer.push(marker);
+            });
+        }
+
+        // Función para limpiar una capa de marcadores
+        function clearMarkerLayer(layer) {
+            layer.forEach(marker => marker.setMap(null));
+            return [];
+        }
+
+        // Toggle para cámaras
+        function toggleCamaras() {
+            if (camarasLayer.length > 0) {
+                camarasLayer = clearMarkerLayer(camarasLayer);
+                return;
+            }
+
+            fetch(`${API_BASE_URL}/camaras/camaras-layer`)
+                .then(response => response.json())
+                .then(data => {
+                    const camaraIcon = {
+                        url: 'assets/img/camera.png',
+                        scaledSize: new google.maps.Size(32, 32)
+                    };
+                    processPointFeatures(data.features, camaraIcon, camarasLayer);
+                })
+                .catch(error => {
+                    console.error("Error al cargar cámaras:", error);
+                    showCustomAlert("Error al cargar la capa de cámaras");
+                });
+        }
+
+        // Toggle para postes
+        function togglePostes() {
+            if (postesLayer.length > 0) {
+                postesLayer = clearMarkerLayer(postesLayer);
+                return;
+            }
+
+            fetch(`${API_BASE_URL}/postes/postes-layer`)
+                .then(response => response.json())
+                .then(data => {
+                    const posteIcon = {
+                        url: 'assets/img/poste.png',
+                        scaledSize: new google.maps.Size(32, 32)
+                    };
+                    processPointFeatures(data.features, posteIcon, postesLayer);
+                })
+                .catch(error => {
+                    console.error("Error al cargar postes:", error);
+                    showCustomAlert("Error al cargar la capa de postes");
+                });
+        }
+
+        // Procesar los datos de la actividad
+        function processActivityData(lat, lng, distancia) {
+            if (!isNaN(lat) && !isNaN(lng)) {
+                const customLocation = { lat, lng };
+
+                // Limpiar marcadores anteriores si existen
+                if (window.activityMarker) {
+                    window.activityMarker.setMap(null);
+                }
+
+                // Crear nuevo marcador
+                window.activityMarker = new google.maps.Marker({
+                    position: customLocation,
+                    map,
+                    icon: {
+                        url: "https://cdn-icons-png.flaticon.com/512/25/25694.png",
+                        scaledSize: new google.maps.Size(16, 16),
+                    },
+                });
+
+                map.setCenter(customLocation);
+
+                // Si tenemos distancia, calcular la falla automáticamente
+                if (!isNaN(distancia) && distancia > 0) {
+                    const loadingOverlay = document.getElementById('loading-overlay');
+                    loadingOverlay.style.display = 'flex';
+                    renderCamarasEnFalla(lat, lng, distancia, loadingOverlay);
+                }
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            var requestDiv = document.querySelector('.json__request');
+
+            function processRequestDiv() {
+                var requestData = requestDiv ? requestDiv.textContent.trim() : '';
+
+                // Si no hay datos o están vacíos, salir silenciosamente
+                if (!requestData) {
+                    return;
+                }
+
+                try {
+                    // Validar que el string es un JSON válido antes de parsearlo
+                    if (!/^[{|[]/.test(requestData)) {
+                        return;
+                    }
+
+                    var requestJson = JSON.parse(requestData);
+                    if (requestJson && requestJson.activity) {
+                        const lng = requestJson.activity.acoord_x;
+                        const lat = requestJson.activity.acoord_y;
+                        const distancia = requestJson.activity.XA_distancia;
+                        const aid = requestJson.activity.aid;
+
+                        // Solo logear si realmente tenemos datos
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            console.log('acoord_x:', lat);
+                            console.log('acoord_y:', lng);
+                            console.log('XA_distancia:', distancia);
+                            console.log('aid:', aid);
+
+                            // Almacenar las coordenadas globalmente
+                            window.activityCoords = { lat, lng, distancia, aid };
+
+                            // Procesar los datos si el mapa ya está inicializado
+                            if (window.map) {
+                                processActivityData(lat, lng, distancia);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Solo logear errores que no sean por JSON vacío o inválido
+                    if (requestData && requestData !== "") {
+                        console.debug('Error processing JSON data:', e);
+                    }
+                }
+            }
+
+            if (requestDiv) {
+                // Procesar contenido inicial
+                processRequestDiv();
+                // Observar cambios futuros
+                var observer = new MutationObserver(processRequestDiv);
+                observer.observe(requestDiv, { childList: true, subtree: true, characterData: true });
+            }
+        });
+
+        // Google Maps y Autocomplete
+        function initMap() {
+            // Inicializar mapa
+            map = window.map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 4.65, lng: -74.1 },
+                zoom: 17,
+            });
+
+            // Inicializar Autocomplete
+            var input = document.getElementById('autocomplete-address');
+            if (input && window.google && google.maps && google.maps.places) {
+                var autocomplete = new google.maps.places.Autocomplete(input, {
+                    types: ['geocode'],
+                    componentRestrictions: { country: 'co' }
+                });
+
+                autocomplete.addListener('place_changed', function () {
+                    var place = autocomplete.getPlace();
+                    if (place.geometry && place.geometry.location) {
+                        map.setCenter(place.geometry.location);
+                        map.setZoom(17);
+                    }
+                });
+            }
+
+            // Procesar datos de actividad si ya están disponibles
+            if (window.activityCoords) {
+                const { lat, lng, distancia } = window.activityCoords;
+                processActivityData(lat, lng, distancia);
+            }
+
+            // Inicializa los listeners de eventos para los toggles
+            document.getElementById("toggleCamaras").addEventListener("change", (e) => {
+                if (e.target.checked) {
+                    if (!camarasLoaded) {
+                        fetchWithAuth(`${API_BASE_URL}/camaras`)
+                            .then((res) => res.json())
+                            .then((geojson) => {
+                                geojson.features.forEach((feature) => {
+                                    processFeature(feature, "https://cdn-icons-png.flaticon.com/512/684/684908.png", camarasLayer);
+                                });
+                                camarasLoaded = true;
+                            });
+                    } else {
+                        toggleLayer(camarasLayer, true);
+                    }
+                } else {
+                    toggleLayer(camarasLayer, false);
+                }
+            });
+
+            document.getElementById("togglePostes").addEventListener("change", (e) => {
+                if (e.target.checked) {
+                    if (!postesLoaded) {
+                        fetchWithAuth(`${API_BASE_URL}/postes`)
+                            .then((res) => res.json())
+                            .then((geojson) => {
+                                geojson.features.forEach((feature) => {
+                                    processFeature(feature, "https://cdn-icons-png.flaticon.com/512/190/190411.png", postesLayer);
+                                });
+                                postesLoaded = true;
+                            });
+                    } else {
+                        toggleLayer(postesLayer, true);
+                    }
+                } else {
+                    toggleLayer(postesLayer, false);
+                }
+            });
+
+            document.getElementById("toggleCablesCanalizados").addEventListener("change", (e) => {
+                if (e.target.checked) {
+                    if (!cablesCanalizadosLoaded) {
+                        fetchWithAuth(`${API_BASE_URL}/cables_canalizados`)
+                            .then((res) => res.json())
+                            .then((geojson) => {
+                                // Procesar las características de los cables canalizados
+                                processCableFeatures(geojson.features, "#000000", cablesCanalizadosLayer);
+                                cablesCanalizadosLoaded = true;
+                            });
+                    } else {
+                        toggleLayer(cablesCanalizadosLayer, true);
+                    }
+                } else {
+                    toggleLayer(cablesCanalizadosLayer, false);
+                }
+            });
+
+            document.getElementById("toggleCablesAereos").addEventListener("change", (e) => {
+                if (e.target.checked) {
+                    if (!cablesAereosLoaded) {
+                        fetchWithAuth(`${API_BASE_URL}/cables_aereos`)
+                            .then((res) => res.json())
+                            .then((geojson) => {
+                                // Procesar las características de los cables aéreos
+                                processCableFeatures(geojson.features, "#FF0000", cablesAereosLayer);
+                                cablesAereosLoaded = true;
+                            });
+                    } else {
+                        toggleLayer(cablesAereosLayer, true);
+                    }
+                } else {
+                    toggleLayer(cablesAereosLayer, false);
+                }
+            });
+
+            // Add a console log for zoomLevel changes
+            map.addListener("zoom_changed", () => {
+                const zoomLevel = map.getZoom();
+                console.log("Current zoom level:", zoomLevel);
+
+                const iconSize = zoomLevel < 10 ? 4 : 16; // Tamaño pequeño para zoom lejano, normal para zoom cercano
+
+                camarasLayer.forEach((marker) => {
+                    marker.setIcon({
+                        url: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+                        scaledSize: new google.maps.Size(iconSize, iconSize),
+                    });
+                });
+
+                postesLayer.forEach((marker) => {
+                    marker.setIcon({
+                        url: "https://cdn-icons-png.flaticon.com/512/190/190411.png",
+                        scaledSize: new google.maps.Size(iconSize, iconSize),
+                    });
+                });
+            });
+
+            // Initialize calculate failure button listener
+            document.getElementById('calculateFailure').addEventListener('click', () => {
+                const loadingOverlay = document.getElementById('loading-overlay');
+                const distanceInput = document.getElementById('distance');
+                const addressInput = document.getElementById('autocomplete-address');
+                const distance = parseFloat(distanceInput.value);
+                const address = addressInput.value.trim();
+
+                if (!address && !distance) {
+                    showAlert('Debe ingresar al menos la distancia');
+                    return;
+                }
+
+                if (address && !distance) {
+                    showAlert('Por favor, ingrese la distancia.');
+                    return;
+                }
+
+                if (distance <= 0) {
+                    showAlert('La distancia debe ser mayor que 0');
+                    return;
+                }
+
+                loadingOverlay.style.display = 'flex';
+
+                // Función para actualizar el marcador de ubicación
+                function updateLocationMarker(lat, lng) {
+                    // Remover marcador anterior si existe
+                    if (userLocationMarker) {
+                        userLocationMarker.setMap(null);
+                    }
+
+                    // Crear nuevo marcador
+                    userLocationMarker = new google.maps.Marker({
+                        position: { lat, lng },
+                        map: window.map,
+                        icon: {
+                            url: "https://cdn-icons-png.flaticon.com/512/25/25694.png",
+                            scaledSize: new google.maps.Size(16, 16),
+                        }
+                    });
+
+                    window.map.setCenter({ lat, lng });
+                }
+
+                if (address) {
+                    // If we have an address, geocode it
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ address }, (results, status) => {
+                        if (status === 'OK') {
+                            const location = results[0].geometry.location;
+                            const lat = location.lat();
+                            const lng = location.lng();
+                            updateLocationMarker(lat, lng);
+                            renderCamarasEnFalla(lat, lng, distance, loadingOverlay);
+                        } else {
+                            showAlert('No se pudo encontrar la dirección: ' + status);
+                            loadingOverlay.style.display = 'none';
+                        }
+                    });
+                }
+                else if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            updateLocationMarker(lat, lng);
+                            renderCamarasEnFalla(lat, lng, distance, loadingOverlay);
+                        },
+                        (error) => {
+                            console.error('Error getting location:', error);
+                            showAlert('No se pudo obtener la ubicación actual. Por favor ingrese una dirección.');
+                            loadingOverlay.style.display = 'none';
+                        }
+                    );
+                } else {
+                    showAlert('Su navegador no soporta geolocalización. Por favor ingrese una dirección.');
+                    loadingOverlay.style.display = 'none';
+                }
+            });
+
+            // After map is initialized, process any pending activity data
+            if (window.activityCoords) {
+                const { lat, lng, distancia } = window.activityCoords;
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const customLocation = { lat, lng };
+                    map.setCenter(customLocation);
+
+                    if (!isNaN(distancia) && distancia > 0) {
+                        renderCamarasEnFalla(lat, lng, distancia, document.getElementById('loading-overlay'));
+                    }
+                }
+            }
+        }
+
+        // Event listener para cerrar el popup con la tecla Escape o Enter
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' || event.key === 'Enter') {
+                closePopup();
+            }
+        });
+
+        // Function to create info windows for markers
+        function createInfoWindow(marker, properties) {
+            if (!properties) return;
+
+            const content = Object.entries(properties)
+                .map(([key, value]) => `<p style="margin: 0 0 3px 0;"><strong>${key}:</strong> ${value || 'N/A'}</p>`)
+                .join('');
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: `<div style="max-width: 200px;">${content}</div>`
+            });
+
+            marker.addListener('click', () => {
+                infoWindow.open(window.map, marker);
+            });
+        }
+
+        // Google Maps y Autocomplete
+    </script>
+</head>
+
+<body>
+
+    <div class="header">
+        <img class="header__logo" src="./etb.svg" alt="ETB">
+        <h1>Seguimiento Falla</h1>
+    </div>
+
+    <div class="content" id="viewer-maps">
+        <div class="contenedor">
+            <div hidden class="json json__request"></div>
+            <div class="fila fila-distance" style="display: flex; align-items: center; gap: 12px;">
+                <input type="text" id="autocomplete-address" placeholder="Buscar dirección" class="input-distance">
+                <label for="distance">Distancia (metros):</label>
+                <input type="number" id="distance" name="distance" min="0" placeholder="Ingrese la distancia"
+                    class="input-distance">
+                <button id="calculateFailure" class="boton-azul"
+                    style="flex: 0.7; min-width: 80px; font-size: 0.95rem; padding: 7px 12px;">Calcular
+                    Falla</button>
+            </div>
+            <div class="fila" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <label><input type="checkbox" id="toggleCamaras"> Cámaras</label><br>
+                <label><input type="checkbox" id="togglePostes"> Postes</label><br>
+                <label><input type="checkbox" id="toggleCablesCanalizados"> Cables Canalizados</label><br>
+                <label><input type="checkbox" id="toggleCablesAereos"> Cables Aéreos</label><br>
+            </div>
+        </div>
+
+        <div id="map" style="height: 100vh;"></div>
+    </div>
+    <!-- Custom Popup -->
+    <div id="custom-popup"
+        style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:10000;">
+        <div class="popup-content"
+            style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);min-width:300px;max-width:90%;">
+            <div class="popup-message" style="margin-bottom:20px;font-size:1rem;color:#333;text-align:center;"></div>
+            <button onclick="closePopup()" class="popup-button"
+                style="display:block;width:100%;padding:10px;background:#0074d9;color:white;border:none;border-radius:4px;cursor:pointer;font-size:1rem;">Aceptar</button>
+        </div>
+    </div>
+    <!-- Overlay de loading -->
+    <div id="loading-overlay"
+        style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.85);z-index:9999;">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+            <div class="lds-roller">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div style='margin-top:18px;font-size:1.2rem;color:#0074d9;font-weight:500;letter-spacing:1px;'>Cargando
+                mapa y fallas...</div>
+        </div>
+    </div>
+    <script>
+        // Elimina el overlay de loading duplicado si existe
+        const oldOverlay = document.getElementById('loading-overlay');
+        if (oldOverlay) oldOverlay.remove();
+        // Agrega overlay de loading bonito al final del body
+        const overlay = document.createElement('div');
+        overlay.id = 'loading-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.background = 'rgba(255,255,255,0.85)';
+        overlay.style.display = 'none';
+        overlay.style.zIndex = 9999;
+        overlay.innerHTML = `
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+          <div class="lds-roller">
+            <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+          </div>
+          <div style='margin-top:18px;font-size:1.2rem;color:#0074d9;font-weight:500;letter-spacing:1px;'>Cargando mapa y fallas...</div>
+        </div>
+      `;
+        document.body.appendChild(overlay);
+        // Spinner CSS global solo una vez
+        if (!document.getElementById('lds-roller-style')) {
+            var style = document.createElement('style');
+            style.id = 'lds-roller-style';
+            style.innerHTML = `
+        .lds-roller {
+          display: inline-block;
+          position: relative;
+          width: 64px;
+          height: 64px;
+        }
+        .lds-roller div {
+          animation: lds-roller 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+          transform-origin: 32px 32px;
+        }
+        .lds-roller div:after {
+          content: " ";
+          display: block;
+          position: absolute;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: #0074d9;
+          margin: -5px 0 0 -5px;
+          box-shadow: 0 0 8px #0074d9;
+        }
+        .lds-roller div:nth-child(1) { animation-delay: -0.036s; }
+        .lds-roller div:nth-child(1):after { top: 50px; left: 50px; }
+        .lds-roller div:nth-child(2) { animation-delay: -0.072s; }
+        .lds-roller div:nth-child(2):after { top: 54px; left: 45px; }
+        .lds-roller div:nth-child(3) { animation-delay: -0.108s; }
+        .lds-roller div:nth-child(3):after { top: 57px; left: 39px; }
+        .lds-roller div:nth-child(4) { animation-delay: -0.144s; }
+        .lds-roller div:nth-child(4):after { top: 58px; left: 32px; }
+        .lds-roller div:nth-child(5) { animation-delay: -0.18s; }
+        .lds-roller div:nth-child(5):after { top: 57px; left: 25px; }
+        .lds-roller div:nth-child(6) { animation-delay: -0.216s; }
+        .lds-roller div:nth-child(6):after { top: 54px; left: 19px; }
+        .lds-roller div:nth-child(7) { animation-delay: -0.252s; }
+        .lds-roller div:nth-child(7):after { top: 50px; left: 14px; }
+        .lds-roller div:nth-child(8) { animation-delay: -0.288s; }
+        .lds-roller div:nth-child(8):after { top: 45px; left: 10px; }
+        @keyframes lds-roller {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        `;
+            document.head.appendChild(style);
+        }
+    </script>
+</body>
+
+</html>
