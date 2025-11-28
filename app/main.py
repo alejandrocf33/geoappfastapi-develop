@@ -76,7 +76,7 @@ async def log_request_origin(request: Request, call_next):
     # Permitir solo si referer es de plugins-*.fs.ocs.oraclecloud.com o x-forwarded-for es 186.29.100.30
     import re
     referer_ok = bool(re.match(r"^https://plugins-[^/]+(\.[^/]+)*\.fs\.ocs\.oraclecloud\.com/", referer))
-    ip_ok = x_forwarded_for.strip() == "192.168.1.65"
+    ip_ok = x_forwarded_for.strip() == "181.234.203.142"
     if not (referer_ok or ip_ok):
         print(f"[API LOG] Bloqueado: Referer={referer} | X-Forwarded-For={x_forwarded_for}")
         return JSONResponse(status_code=403, content={
