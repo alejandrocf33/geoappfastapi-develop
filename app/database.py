@@ -9,7 +9,8 @@ def get_connection():
             port=config.DB_PORT,
             dbname=config.DB_NAME,
             user=config.DB_USER,
-            password=config.DB_PASSWORD
+            password=config.DB_PASSWORD,
+            sslmode="require"
         )
     except psycopg2.Error as e:
         raise Exception(f"Error al conectar a la base de datos: {str(e)}")
