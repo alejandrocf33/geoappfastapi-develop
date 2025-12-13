@@ -7,11 +7,11 @@ def create_env_file():
     """Crear archivo .env si no existe"""
     env_path = Path('.env')
     if not env_path.exists():
-        env_content = """DB_HOST=54.234.163.140
-DB_PORT=5432
-DB_NAME=geodb
-DB_USER=admin
-DB_PASSWORD=adminpostgres2025"""
+        env_content = """DB_HOST=aws-1-sa-east-1.pooler.supabase.com
+DB_PORT=6543
+DB_NAME=postgres
+DB_USER=postgres.ksfkvsjqhstpovsjtlbm
+DB_PASSWORD=200506860Alcf"""
         env_path.write_text(env_content, encoding='utf-8')
         print("Archivo .env creado\n")
 
@@ -36,11 +36,11 @@ def ejecutar_scripts_sql():
     load_dotenv()
     
     # Obtener credenciales de la base de datos
-    db_host = os.environ.get('DB_HOST', '54.234.163.140')
-    db_port = os.environ.get('DB_PORT', '5432')
-    db_name = os.environ.get('DB_NAME', 'geodb')
+    db_host = os.environ.get('DB_HOST', 'aws-1-sa-east-1.pooler.supabase.com')
+    db_port = os.environ.get('DB_PORT', '6543')
+    db_name = os.environ.get('DB_NAME', 'postgres')
     db_user = os.environ.get('DB_USER', 'admin')
-    db_password = os.environ.get('DB_PASSWORD', 'adminpostgres2025')
+    db_password = os.environ.get('DB_PASSWORD', '200506860Alcf')
     
     # Conectar a la base de datos
     try:
