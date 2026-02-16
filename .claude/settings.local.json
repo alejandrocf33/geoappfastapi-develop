@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp list:*)",
+      "Bash(claude.exe mcp list:*)",
+      "Bash(npx @anthropic-ai/claude-code mcp list:*)",
+      "Bash(psql:*)",
+      "Bash(python:*)",
+      "Bash(py:*)",
+      "Bash(python3.11:*)",
+      "Bash(\"/mnt/c/Users/leangars/AppData/Local/Programs/Python/Python313/python.exe\" -c \"import psycopg2; print\\(''ok''\\)\")",
+      "Bash(\"/c/Users/leangars/AppData/Local/Programs/Python/Python313/python.exe\" -c \"import psycopg2; print\\(''psycopg2 ok''\\)\")"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}

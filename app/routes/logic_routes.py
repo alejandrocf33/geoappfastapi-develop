@@ -226,7 +226,7 @@ def get_nodos_alcanzables_en_ruta_red(
     lon: float = Query(..., description="Longitud del punto de inicio (en grados decimales)"),
     lat: float = Query(..., description="Latitud del punto de inicio (en grados decimales)"),
     distancia: float = Query(..., description="Distancia a recorrer en metros por la red"),
-    margen_factor: float = Query(0.999, description="Margen de error como factor decimal (por defecto 0.999)"),
+    margen_factor: float = Query(0.9, description="Margen de error como factor decimal (por defecto 0.9)"),
     user: str = Depends(authenticate)
 ):
     """

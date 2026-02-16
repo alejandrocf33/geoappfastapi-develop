@@ -601,13 +601,15 @@ def get_centrales_from_db(lat=None, lon=None, radio_interno=None, radio_externo=
                     FROM centrales
                     WHERE (estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado')
                     AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, %s)
-                    AND ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) >= %s;
+                    AND ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) >= %s
+                    ORDER BY propiedades->>'nombre' ASC;
                 """, (lon, lat, lon, lat, radio_externo, lon, lat, radio_interno))
             else:
                 cur.execute("""
                     SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry
                     FROM centrales
                     WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                    ORDER BY propiedades->>'nombre' ASC
                     LIMIT 100;
                 """)
             
@@ -636,6 +638,7 @@ def get_all_centrales_from_db():
                 SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry
                 FROM centrales
                 WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                ORDER BY propiedades->>'nombre' ASC
             """)
             features = []
             for row in cur.fetchall():
