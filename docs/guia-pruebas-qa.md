@@ -1,34 +1,28 @@
-# Guía de Pruebas QA — Registros de Entidades
+# Guía de Pruebas QA — Registro de Elementos
 
-Este documento describe cómo enviar correctamente solicitudes de registro para cada una de las 4 entidades geoespaciales. Incluye valores de ejemplo válidos y explica los errores más comunes.
+Instructivo para el equipo QA sobre cómo completar correctamente cada formulario de registro y los valores válidos para cada campo. Aplica tanto para uso desde la interfaz web como desde Postman/curl.
 
 ---
 
-## Requisitos comunes a todos los registros
+## Menú de tipos de elemento
 
-### Autenticación
-Todos los endpoints requieren **HTTP Basic Auth**.
+El selector "TIPO DE ELEMENTO" tiene las siguientes opciones:
 
-```
-Usuario: <valor de API_USERNAME en .env>
-Contraseña: <valor de API_PASSWORD en .env>
-```
+| Opción en formulario | Endpoint API |
+|----------------------|--------------|
+| Cámara | `POST /api/camaras` |
+| Empalme | `POST /api/empalmes` |
+| Cable Corporativo | `POST /api/cable_corporativo` |
+| Reporte Cierre Mal Estado | `POST /api/reporte_mal_estado` |
 
-En Postman: pestaña **Authorization** → tipo **Basic Auth**.
+---
 
-En curl:
-```bash
-curl -u usuario:contraseña -X POST ...
-```
+## Autenticación (requerida en todos los registros)
 
-### URL base
-- **Railway (producción/QA):** `https://geoappfastapi-develop-production.up.railway.app/api`
-- **Local:** `http://localhost:8000/api`
+Todos los endpoints usan **HTTP Basic Auth**.
 
-### Cabecera opcional de trazabilidad
-```
-user-header: nombre-del-tecnico-qa
-```
+- En Postman: pestaña **Authorization** → tipo **Basic Auth** → ingresar usuario y contraseña de la API.
+- En curl: `curl -u usuario:contraseña -X POST ...`
 
 ---
 
@@ -36,58 +30,81 @@ user-header: nombre-del-tecnico-qa
 
 **Endpoint:** `POST /api/camaras`
 
-### Campos
+### Campos del formulario
 
-| Campo | Tipo | Requerido | Descripción | Valores válidos de ejemplo |
-|-------|------|-----------|-------------|---------------------------|
-| `latitud` | float | **SÍ** | Latitud WGS84 | `-90` a `90`. Bogotá: `4.6097` |
-| `longitud` | float | **SÍ** | Longitud WGS84 | `-180` a `180`. Bogotá: `-74.0817` |
-| `type` | string | No | Tipo de cámara | `"Subterránea"`, `"Aérea"`, `"Pedestal"` |
-| `id_texto` | string | No | Identificador textual **único** | `"CAM-001"` — si se envía, debe ser único en la BD. Dejar vacío si no se conoce |
-| `ubicacion` | string | No | Dirección o descripción | `"Calle 100 # 15-20, Bogotá"` |
-| `nombre_esp` | string | No | Nombre especial | `"Cámara Norte"` |
-| `apertura` | string | No | Tipo de apertura | `"Manual"`, `"Hidráulica"` |
-| `propietari` | string | No | Propietario | `"ETB"` |
-| `constructi` | string | No | Constructor | `"Constructora ABC"` |
-| `estado_cam` | string | No | Estado de la cámara | `"Operativa"`, `"En Mantenimiento"`, `"Fuera de Servicio"` |
-| `estado_tapa` | string | No | Estado de la tapa | `"Buena"`, `"En daño"`, `"Sin seguridad"`, `"Sin tapa"` |
-| `codigo_etb` | string | No | Código interno ETB | `"ETB-12345"` |
-| `remedy_id` | string | No | ID de ticket Remedy | `"INC0001234"` |
-| `tecnico` | string | No | Técnico responsable | `"Juan Pérez"` |
-| `observaciones` | string | No | Texto libre | `"Cámara recién instalada"` |
+| Etiqueta en formulario | Campo API | Tipo | Requerido | Valores válidos |
+|------------------------|-----------|------|-----------|-----------------|
+| Marquillado (SÍ/NO) | `marquillado` | string | No | `"SÍ"`, `"NO"` |
+| Nombre (Esp) | `nombre_esp` | string | No | Texto libre. Ej: `"ETB-CENTRO-01"` |
+| Apertura | `apertura` | string | No | Ver tabla abajo |
+| Ubicación (Dirección) | `ubicacion` | string | No | Texto libre. Ej: `"Calle 100 # 15-20"` |
+| Propietario | `propietari` | string | No | Ver tabla abajo |
+| Estado Cámara | `estado_cam` | string | No | `"SIN NOVEDAD"`, `"CON GASES"` |
+| Estado Tapa | `estado_tapa` | string | No | Ver tabla abajo |
+| Observaciones | `observaciones` | string | No | Texto libre |
+| ID Tarea REMEDY | `remedy_id` | string | No | Ej: `"INC000012345"` (se llena automáticamente) |
+| Técnico | `tecnico` | string | No | Nombre del técnico (se llena automáticamente) |
+| Código ETB | `codigo_etb` | string | No | Ej: `"ETB-12345"` |
+| Longitud | `longitud` | float | **SÍ** | Se llena con botón "Ubicación" (GPS) |
+| Latitud | `latitud` | float | **SÍ** | Se llena con botón "Ubicación" (GPS) |
 
-> **IMPORTANTE sobre `id_texto`:** Este campo es un **identificador único** (no es Sí/No). Si se envía un valor que ya existe en la BD, la API retorna error **409 Conflict**. Usar siempre un valor nuevo (ej. `"CAM-QA-001"`) o dejarlo `null`.
+> **Tipo** y **Constructi** están ocultos en el formulario y no son necesarios para el registro.
 
-### Ejemplo de body (mínimo válido)
+#### Valores válidos: Apertura
+
+| Valor |
+|-------|
+| `ESTANDAR` |
+| `MAGNETICA` |
+| `ESTANDAR SOLDADA` |
+| `LLAVE DE SEGURIDAD` |
+| `CORCHO DIFERENCIAL` |
+| `CORTINA - CANDADO` |
+| `Llave de Seguridad - SOLDADA` |
+| `CORCHO GRUA` |
+
+#### Valores válidos: Propietario
+
+| Valor |
+|-------|
+| `ETB` |
+| `CODENSA` |
+| `OTROS OPERADORES` |
+| `SDM` |
+| `SMV` |
+| `EMSA` |
+
+#### Valores válidos: Estado Tapa
+
+| Valor |
+|-------|
+| `Buena` |
+| `En daño` |
+| `Sin seguridad` |
+| `Sin tapa` |
+
+### Ejemplo de body para Postman (QA)
+
 ```json
 {
-  "latitud": 4.6097,
-  "longitud": -74.0817
-}
-```
-
-### Ejemplo de body (completo para QA)
-```json
-{
-  "type": "Subterránea",
-  "id_texto": "CAM-QA-001",
+  "marquillado": "SÍ",
+  "nombre_esp": "Camara QA Norte",
+  "apertura": "ESTANDAR",
   "ubicacion": "Calle 100 # 15-20, Bogotá",
-  "nombre_esp": "Cámara QA Norte",
-  "apertura": "Manual",
   "propietari": "ETB",
-  "constructi": "Constructora QA",
-  "estado_cam": "Operativa",
+  "estado_cam": "SIN NOVEDAD",
   "estado_tapa": "Buena",
-  "codigo_etb": "ETB-QA-001",
-  "remedy_id": "INC0000001",
-  "tecnico": "Tecnico QA",
   "observaciones": "Registro de prueba QA",
+  "remedy_id": "INC000012345",
+  "tecnico": "Tecnico QA",
+  "codigo_etb": "ETB-QA-001",
   "latitud": 4.6097,
   "longitud": -74.0817
 }
 ```
 
-### Respuesta exitosa (201)
+### Respuesta exitosa
+
 ```json
 {
   "message": "Cámara insertada correctamente",
@@ -96,224 +113,47 @@ user-header: nombre-del-tecnico-qa
 }
 ```
 
-### Errores comunes
-
-| Código | Causa | Solución |
-|--------|-------|----------|
-| 401 | Credenciales incorrectas | Verificar usuario/contraseña en Basic Auth |
-| 409 | `id_texto` ya existe | Cambiar el valor de `id_texto` o dejarlo `null` |
-| 422 | `latitud`/`longitud` fuera de rango | Usar coordenadas WGS84 válidas |
-| 500 | Error interno BD | Revisar logs del servidor |
-
 ---
 
-## 2. Cable Corporativo
-
-**Endpoint:** `POST /api/cable_corporativo`
-
-### Campos
-
-| Campo | Tipo | Requerido | Descripción | Valores válidos de ejemplo |
-|-------|------|-----------|-------------|---------------------------|
-| `puntos` | array | **SÍ*** | Lista de al menos 2 puntos `{latitud, longitud}` | Ver ejemplo abajo |
-| `id_texto` | string | No | Identificador textual | `"CABLE-QA-001"` |
-| `name` | string | No | Nombre del cable | `"Cable Troncal Norte"` |
-| `nombre_ant` | string | No | Nombre anterior | `"Cable Antiguo Norte"` |
-| `nombre_esp` | string | No | Nombre especial | `"Fibra óptica 48H troncal"` |
-| `colocacion` | string | No | Tipo de colocación | `"Troncal"`, `"Acceso"`, `"Distribución"` |
-| `constructi` | string | No | Constructor | `"Constructora ABC"` |
-| `perdida_db` | float | No | Pérdida en dB (≥ 0) | `2.5` |
-| `contratist` | string | No | Contratista | `"Contratista XYZ"` |
-| `segmento` | string | No | Segmento de red | `"Norte"`, `"Sur"` |
-| `pr` | string | No | Propietario | `"ETB"` |
-| `calculat1` | float | No | Cálculo capacidad 1 | `48.0` |
-| `calculat2` | float | No | Cálculo capacidad 2 | `48.0` |
-| `calculated` | float | No | Cálculo capacidad final | `48.0` |
-| `id_especificacion` | float | No | ID de especificación | `1.0` |
-| `measured_l` | float | No | Longitud medida (metros) | `250.5` |
-| `remedy_id` | string | No | ID ticket Remedy | `"INC0001234"` |
-| `tecnico` | string | No | Técnico responsable | `"Juan Pérez"` |
-| `observaciones` | string | No | Texto libre | `"Cable nuevo QA"` |
-
-> **\*`puntos` o `geometry`:** Se debe enviar `puntos` con al menos 2 coordenadas, O bien `geometry` en formato WKT LINESTRING. Si se envía `geometry`, el campo `puntos` puede omitirse.
-
-### Estructura de cada punto en `puntos`
-```json
-{"latitud": 4.6097, "longitud": -74.0817}
-```
-
-### Ejemplo de body (mínimo válido)
-```json
-{
-  "puntos": [
-    {"latitud": 4.6097, "longitud": -74.0817},
-    {"latitud": 4.6110, "longitud": -74.0830}
-  ]
-}
-```
-
-### Ejemplo de body (completo para QA)
-```json
-{
-  "id_texto": "CABLE-QA-001",
-  "name": "Cable QA Norte",
-  "nombre_esp": "Fibra óptica 48H QA",
-  "colocacion": "Troncal",
-  "constructi": "Constructora QA",
-  "perdida_db": 1.5,
-  "segmento": "Norte",
-  "pr": "ETB",
-  "remedy_id": "INC0000002",
-  "tecnico": "Tecnico QA",
-  "observaciones": "Cable de prueba QA",
-  "puntos": [
-    {"latitud": 4.6097, "longitud": -74.0817},
-    {"latitud": 4.6110, "longitud": -74.0830},
-    {"latitud": 4.6125, "longitud": -74.0845}
-  ]
-}
-```
-
-### Alternativa con WKT
-```json
-{
-  "name": "Cable QA WKT",
-  "geometry": "LINESTRING(-74.0817 4.6097, -74.0830 4.6110, -74.0845 4.6125)"
-}
-```
-
-> **Nota WKT:** El orden en WKT es `longitud latitud` (X Y), al contrario del JSON de `puntos`.
-
-### Respuesta exitosa (201)
-```json
-{
-  "message": "Cable corporativo insertado correctamente",
-  "id": 456,
-  "objectid": 456
-}
-```
-
-### Errores comunes
-
-| Código | Causa | Solución |
-|--------|-------|----------|
-| 401 | Credenciales incorrectas | Verificar Basic Auth |
-| 422 | Menos de 2 puntos en `puntos` | Agregar al menos 2 puntos |
-| 422 | `perdida_db` negativa | Usar valor ≥ 0 |
-| 422 | `geometry` no es LINESTRING | Usar `LINESTRING(...)` |
-| 500 | Error interno BD | Revisar logs |
-
----
-
-## 3. Central
-
-**Endpoint:** `POST /api/centrales`
-
-### Campos
-
-| Campo | Tipo | Requerido | Descripción | Valores válidos de ejemplo |
-|-------|------|-----------|-------------|---------------------------|
-| `latitud` | float | **SÍ** | Latitud WGS84 | `4.7437` |
-| `longitud` | float | **SÍ** | Longitud WGS84 | `-74.0616` |
-| `id_texto` | string | No | Identificador textual | `"CTL-QA-001"` |
-| `nombre` | string | No | Nombre de la central | `"Central Norte"` |
-| `codigo` | string | No | Código único interno | `"CN-001"` |
-| `direccion` | string | No | Dirección física | `"Calle 165 # 25-30, Bogotá"` |
-| `tipo` | string | No | Tipo de central | `"Conmutación"`, `"Transmisión"`, `"Datos"` |
-
-### Ejemplo de body (mínimo válido)
-```json
-{
-  "latitud": 4.7437,
-  "longitud": -74.0616
-}
-```
-
-### Ejemplo de body (completo para QA)
-```json
-{
-  "id_texto": "CTL-QA-001",
-  "nombre": "Central QA Norte",
-  "codigo": "CQA-001",
-  "direccion": "Calle 165 # 25-30, Bogotá",
-  "tipo": "Conmutación",
-  "latitud": 4.7437,
-  "longitud": -74.0616
-}
-```
-
-### Respuesta exitosa (201)
-```json
-{
-  "message": "Central insertada correctamente",
-  "id": 789
-}
-```
-
-### Errores comunes
-
-| Código | Causa | Solución |
-|--------|-------|----------|
-| 401 | Credenciales incorrectas | Verificar Basic Auth |
-| 422 | `latitud`/`longitud` faltante o fuera de rango | Incluir coordenadas válidas |
-| 500 | Error interno BD | Revisar logs |
-
----
-
-## 4. Empalme
+## 2. Empalme
 
 **Endpoint:** `POST /api/empalmes`
 
-### Campos principales
+### Campos del formulario
 
-| Campo | Tipo | Requerido | Descripción | Valores válidos de ejemplo |
-|-------|------|-----------|-------------|---------------------------|
-| `latitud` | float | **SÍ** | Latitud WGS84 | `4.6647` |
-| `longitud` | float | **SÍ** | Longitud WGS84 | `-74.0917` |
-| `id_texto` | string | No | Identificador textual **único** | `"EMP-QA-001"` |
-| `tipo_empalme` | string | No | Tipo de empalme | `"T-T"`, `"T-A"`, `"A-A"` |
-| `name` | string | No | Nombre | `"Empalme Principal"` |
-| `type` | string | No | Tipo (clasificación) | `"Empalme de Fibra Óptica"` |
-| `segmento` | string | No | Segmento de red | `"Norte"` |
-| `propietario` | string | No | Propietario | `"ETB"` |
-| `splice_type` | string | No | Tipo de empalme técnico | `"Fusión"`, `"Mecánico"` |
-| `count_mayorista` | float | No | Hilos mayoristas | `12.0` |
-| `mayorista_gather` | string | No | Nombre del mayorista | `"Telmex"` |
-| `construction_status` | string | No | Estado de construcción | `"Operativo"`, `"En Construcción"` |
-| `cable1` | string | No | Nombre cable asociado 1 | `"CABLE-001"` |
-| `cable2` | string | No | Nombre cable asociado 2 | `"CABLE-002"` |
-| `remedy_id` | string | No | ID ticket Remedy | `"INC0001234"` |
-| `tecnico` | string | No | Técnico responsable | `"Juan Pérez"` |
-| `observaciones` | string | No | Texto libre | `"Empalme nuevo QA"` |
-| `sangria` | float | No | Sangría del empalme | `1.5` |
-| `id_specification` | string | No | ID de especificación | `"ESP-001"` |
-| `nombre_especificacion` | string | No | Nombre especificación | `"Especificación 48H"` |
+| Etiqueta en formulario | Campo API | Tipo | Requerido | Valores válidos |
+|------------------------|-----------|------|-----------|-----------------|
+| Etiqueta Cable (Marquilla) | `name` | string | No | Texto libre. Ej: `"EMP-001"` |
+| Tipo | `type` | string | No | `"Mecánico"`, `"Fusión"` |
+| Tipo Empalme | `tipo_empalme` | string | No | `"T-T"`, `"T-A"`, `"A-A"` |
+| Cable 1 | `cable1` | string | No | Nombre del cable asociado. Ej: `"CABLE-001"` |
+| Cable 2 | `cable2` | string | No | Nombre del cable asociado. Ej: `"CABLE-002"` |
+| ID Tarea REMEDY | `remedy_id` | string | No | Ej: `"INC000012345"` |
+| Técnico | `tecnico` | string | No | Nombre del técnico |
+| Observaciones | `observaciones` | string | No | Texto libre |
+| Longitud | `longitud` | float | **SÍ** | Se llena con botón "Ubicación" (GPS) |
+| Latitud | `latitud` | float | **SÍ** | Se llena con botón "Ubicación" (GPS) |
 
-> **IMPORTANTE sobre `id_texto`:** Al igual que en Cámara, es un **identificador único**. Si ya existe en la BD, la API retorna **409 Conflict**. Usar valor nuevo o dejarlo `null`.
+> El campo **Ubicación** en el formulario es solo para geocodificación (autocompletar las coordenadas), no se envía a la API.
 
-### Ejemplo de body (mínimo válido)
+### Valores válidos: Tipo Empalme
+
+| Valor | Descripción |
+|-------|-------------|
+| `T-T` | Tierra - Tierra |
+| `T-A` | Tierra - Aéreo |
+| `A-A` | Aéreo - Aéreo |
+
+### Ejemplo de body para Postman (QA)
+
 ```json
 {
-  "latitud": 4.6647,
-  "longitud": -74.0917
-}
-```
-
-### Ejemplo de body (completo para QA)
-```json
-{
-  "id_texto": "EMP-QA-001",
+  "name": "EMP-QA-001",
+  "type": "Mecánico",
   "tipo_empalme": "T-T",
-  "name": "Empalme QA Principal",
-  "type": "Empalme de Fibra Óptica",
-  "segmento": "Norte",
-  "propietario": "ETB",
-  "splice_type": "Fusión",
-  "count_mayorista": 12.0,
-  "construction_status": "Operativo",
   "cable1": "CABLE-QA-001",
   "cable2": "CABLE-QA-002",
-  "remedy_id": "INC0000003",
+  "remedy_id": "INC000012345",
   "tecnico": "Tecnico QA",
   "observaciones": "Empalme de prueba QA",
   "latitud": 4.6647,
@@ -321,7 +161,8 @@ user-header: nombre-del-tecnico-qa
 }
 ```
 
-### Respuesta exitosa (201)
+### Respuesta exitosa
+
 ```json
 {
   "message": "Empalme insertado correctamente",
@@ -330,75 +171,125 @@ user-header: nombre-del-tecnico-qa
 }
 ```
 
-### Errores comunes
+---
 
-| Código | Causa | Solución |
-|--------|-------|----------|
-| 401 | Credenciales incorrectas | Verificar Basic Auth |
-| 409 | `id_texto` ya existe | Cambiar el valor o dejarlo `null` |
-| 422 | `latitud`/`longitud` faltante | Incluir coordenadas válidas |
-| 500 | Error interno BD | Revisar logs |
+## 3. Cable Corporativo
+
+**Endpoint:** `POST /api/cable_corporativo`
+
+### Campos del formulario
+
+| Etiqueta en formulario | Campo API | Tipo | Requerido | Valores válidos |
+|------------------------|-----------|------|-----------|-----------------|
+| Colocación | `colocacion` | string | No | `"Troncal"`, `"Acceso"`, `"Troncal-Acceso"`, texto libre |
+| Nombre ESP | `nombre_esp` | string | No | Texto libre. Ej: `"Ductado 24h senc"` |
+| ID Tarea REMEDY | `remedy_id` | string | No | Ej: `"INC000012345"` |
+| Técnico | `tecnico` | string | No | Nombre del técnico |
+| Observaciones | `observaciones` | string | No | Texto libre |
+| Longitud Inicial | primer punto en `puntos` | float | **SÍ** | Se llena con botón "Capturar Inicio" (GPS) |
+| Latitud Inicial | primer punto en `puntos` | float | **SÍ** | Se llena con botón "Capturar Inicio" (GPS) |
+| Longitud Final | segundo punto en `puntos` | float | **SÍ** | Se llena con botón "Capturar Fin" (GPS) |
+| Latitud Final | segundo punto en `puntos` | float | **SÍ** | Se llena con botón "Capturar Fin" (GPS) |
+
+> El formulario captura **2 puntos** (inicio y fin). La API los recibe como lista en el campo `puntos`.
+> Los campos **Ubicación Inicial** y **Ubicación Final** son solo para geocodificación, no se envían a la API.
+
+### Ejemplo de body para Postman (QA)
+
+```json
+{
+  "colocacion": "Troncal",
+  "nombre_esp": "Cable QA Ductado 24h",
+  "remedy_id": "INC000012345",
+  "tecnico": "Tecnico QA",
+  "observaciones": "Cable de prueba QA",
+  "puntos": [
+    {"latitud": 4.6097, "longitud": -74.0817},
+    {"latitud": 4.6125, "longitud": -74.0845}
+  ]
+}
+```
+
+### Respuesta exitosa
+
+```json
+{
+  "message": "Cable corporativo insertado correctamente",
+  "id": 456,
+  "objectid": 456
+}
+```
+
+### Error más común: menos de 2 puntos
+
+```json
+HTTP 422 Unprocessable Entity
+"Se requieren al menos 2 puntos para formar un cable (LineString)"
+```
+
+Asegurarse de que tanto los campos de punto inicial como final estén diligenciados antes de enviar.
 
 ---
 
-## 5. Reserva
+## 4. Reporte Cierre Mal Estado
 
-**Endpoint:** `POST /api/reservas`
+**Endpoint:** `POST /api/reporte_mal_estado`
 
-### Campos
+### Campos del formulario
 
-| Campo | Tipo | Requerido | Descripción | Valores válidos de ejemplo |
-|-------|------|-----------|-------------|---------------------------|
-| `latitud` | float | **SÍ** | Latitud WGS84 | `4.6147` |
-| `longitud` | float | **SÍ** | Longitud WGS84 | `-74.0816` |
-| `id_texto` | string | No | Identificador textual | `"RES-QA-001"` |
-| `nombre` | string | No | Nombre de la reserva | `"Reserva QA Norte"` |
-| `tipo` | string | No | Tipo de reserva | `"Reserva de Fibra Óptica"` |
-| `capacidad` | string | No | Capacidad | `"48 hilos"`, `"96 hilos"` |
-| `ubicacion` | string | No | Descripción de ubicación | `"Calle 26 con Av. Caracas"` |
+| Etiqueta en formulario | Campo API | Tipo | Requerido | Valores válidos |
+|------------------------|-----------|------|-----------|-----------------|
+| Número de Cable | `numero_cable` | string | No | Texto libre. Ej: `"CABLE-001"` |
+| Nivel de Daño | `nivel_dano` | string | No | `"Alto"`, `"Medio"`, `"Bajo"` |
+| Dirección | `direccion` | string | No | Texto libre. Ej: `"Calle 80 # 30-40"` |
+| Observaciones | `observaciones` | string | No | Texto libre |
+| ID Tarea REMEDY | `remedy_id` | string | No | Ej: `"INC000012345"` |
+| Técnico | `tecnico` | string | No | Nombre del técnico |
+| Longitud | `longitud` | float | **SÍ** | Se llena con botón "Ubicación (Obligatorio)" |
+| Latitud | `latitud` | float | **SÍ** | Se llena con botón "Ubicación (Obligatorio)" |
 
-### Ejemplo de body (mínimo válido)
+> La **Ubicación** es obligatoria en este formulario. El botón activa el GPS para llenar longitud y latitud. Sin coordenadas, el registro fallará.
+
+### Ejemplo de body para Postman (QA)
+
 ```json
 {
-  "latitud": 4.6147,
-  "longitud": -74.0816
+  "numero_cable": "CABLE-QA-001",
+  "nivel_dano": "Medio",
+  "direccion": "Calle 80 # 30-40, Bogotá",
+  "observaciones": "Caja rota con cables expuestos",
+  "remedy_id": "INC000012345",
+  "tecnico": "Tecnico QA",
+  "latitud": 4.6500,
+  "longitud": -74.1200
 }
 ```
 
-### Ejemplo de body (completo para QA)
+### Respuesta exitosa
+
 ```json
 {
-  "id_texto": "RES-QA-001",
-  "nombre": "Reserva QA Norte",
-  "tipo": "Reserva de Fibra Óptica",
-  "capacidad": "48 hilos",
-  "ubicacion": "Calle 26 con Av. Caracas, Bogotá",
-  "latitud": 4.6147,
-  "longitud": -74.0816
+  "message": "Reporte de mal estado registrado correctamente",
+  "id": 789
 }
 ```
-
-### Respuesta exitosa (201)
-```json
-{
-  "message": "Reserva insertada correctamente",
-  "id": 654
-}
-```
-
-### Errores comunes
-
-| Código | Causa | Solución |
-|--------|-------|----------|
-| 401 | Credenciales incorrectas | Verificar Basic Auth |
-| 422 | `latitud`/`longitud` faltante | Incluir coordenadas válidas |
-| 500 | Error interno BD | Revisar logs |
 
 ---
 
-## Coordenadas de referencia — Bogotá
+## Errores comunes en todos los registros
 
-Para pruebas en Bogotá, usar coordenadas dentro de estos rangos:
+| Código | Causa | Solución |
+|--------|-------|----------|
+| **401** | Credenciales incorrectas | Verificar usuario/contraseña en Basic Auth |
+| **409** | `id_texto` duplicado en Empalme (si se envía desde Postman) | Usar un valor distinto o dejarlo vacío |
+| **422** | Campo requerido vacío o inválido | Revisar que latitud/longitud estén diligenciados; para Cable, verificar que hay 2 puntos |
+| **500** | Error interno de base de datos | Revisar los logs del servidor en Railway |
+
+---
+
+## Coordenadas de prueba — Bogotá
+
+Para pruebas manuales desde Postman (sin GPS), usar coordenadas reales de Bogotá:
 
 | Zona | Latitud | Longitud |
 |------|---------|----------|
@@ -409,28 +300,9 @@ Para pruebas en Bogotá, usar coordenadas dentro de estos rangos:
 
 ---
 
-## Tabla resumen de campos requeridos
+## URL de la API
 
-| Entidad | Endpoint | Requerido obligatorio |
-|---------|----------|----------------------|
-| Cámara | `POST /api/camaras` | `latitud`, `longitud` |
-| Cable Corporativo | `POST /api/cable_corporativo` | `puntos` (≥ 2) **o** `geometry` |
-| Central | `POST /api/centrales` | `latitud`, `longitud` |
-| Empalme | `POST /api/empalmes` | `latitud`, `longitud` |
-| Reserva | `POST /api/reservas` | `latitud`, `longitud` |
-
----
-
-## Verificación de registros
-
-Después de un POST exitoso, verificar con GET:
-
-```
-GET /api/camaras          → lista cámaras (máx. 100)
-GET /api/cables           → lista cables
-GET /api/centrales        → lista centrales
-GET /api/empalmes         → lista empalmes
-GET /api/reservas         → lista reservas
-```
-
-Todos los GET también requieren Basic Auth y retornan GeoJSON FeatureCollection.
+| Ambiente | URL base |
+|----------|----------|
+| Railway (QA/Prod) | `https://geoappfastapi-develop-production.up.railway.app/api` |
+| Local | `http://localhost:8000/api` |
