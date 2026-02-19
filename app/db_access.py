@@ -151,7 +151,7 @@ def insertar_camara_db(camara, username="sistema"):
                     "estado_cam": camara.estado_cam,
                     "nombre_esp": camara.nombre_esp, 
                     "propietari": camara.propietari,
-                    "cÓdigo_etb": camara.codigo_etb,
+                    "codigo_etb": camara.codigo_etb,
                     "estado_tapa": camara.estado_tapa,
                     "observaciones": camara.observaciones,
                     "remedy_id": camara.remedy_id,
