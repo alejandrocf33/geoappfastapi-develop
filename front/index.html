@@ -508,83 +508,55 @@
                 });
             });
 
-            // Initialize calculate failure button listener
-            document.getElementById('calculateFailure').addEventListener('click', () => {
+            // Botón "Actualizar geolocalización" — obtiene posición del técnico vía ETA/OFS
+            document.getElementById('actualizarGeolocalizacion').addEventListener('click', async () => {
                 const loadingOverlay = document.getElementById('loading-overlay');
-                const distanceInput = document.getElementById('distance');
-                const addressInput = document.getElementById('autocomplete-address');
-                const distance = parseFloat(distanceInput.value);
-                const address = addressInput.value.trim();
-
-                if (!address && !distance) {
-                    showAlert('Debe ingresar al menos la distancia');
-                    return;
-                }
-
-                if (address && !distance) {
-                    showAlert('Por favor, ingrese la distancia.');
-                    return;
-                }
-
-                if (distance <= 0) {
-                    showAlert('La distancia debe ser mayor que 0');
-                    return;
-                }
-
                 loadingOverlay.style.display = 'flex';
 
-                // Función para actualizar el marcador de ubicación
-                function updateLocationMarker(lat, lng) {
-                    // Remover marcador anterior si existe
-                    if (userLocationMarker) {
-                        userLocationMarker.setMap(null);
+                const activityId = window.activityCoords && window.activityCoords.aid;
+                if (!activityId) {
+                    loadingOverlay.style.display = 'none';
+                    showAlert('No se encontró ID de actividad del plugin OFS.');
+                    return;
+                }
+
+                try {
+                    const res = await fetchWithAuth(`${API_BASE_URL}/api/eta/ubicacion-tecnico?activity_id=${activityId}`);
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        showAlert('Error al obtener ubicación: ' + (data.detail || res.status));
+                        return;
                     }
 
-                    // Crear nuevo marcador
-                    userLocationMarker = new google.maps.Marker({
+                    const lat = parseFloat(data.lat);
+                    const lng = parseFloat(data.lng);
+
+                    if (isNaN(lat) || isNaN(lng)) {
+                        showAlert('Las coordenadas del técnico no son válidas.');
+                        return;
+                    }
+
+                    // Limpiar marcador anterior del técnico
+                    if (window.tecnicoMarker) window.tecnicoMarker.setMap(null);
+
+                    window.tecnicoMarker = new google.maps.Marker({
                         position: { lat, lng },
                         map: window.map,
+                        title: 'Técnico',
                         icon: {
-                            url: "https://cdn-icons-png.flaticon.com/512/25/25694.png",
-                            scaledSize: new google.maps.Size(16, 16),
+                            url: 'https://cdn-icons-png.flaticon.com/512/25/25694.png',
+                            scaledSize: new google.maps.Size(24, 24),
                         }
                     });
 
                     window.map.setCenter({ lat, lng });
-                }
+                    window.map.setZoom(17);
 
-                if (address) {
-                    // If we have an address, geocode it
-                    const geocoder = new google.maps.Geocoder();
-                    geocoder.geocode({ address }, (results, status) => {
-                        if (status === 'OK') {
-                            const location = results[0].geometry.location;
-                            const lat = location.lat();
-                            const lng = location.lng();
-                            updateLocationMarker(lat, lng);
-                            renderCamarasEnFalla(lat, lng, distance, loadingOverlay);
-                        } else {
-                            showAlert('No se pudo encontrar la dirección: ' + status);
-                            loadingOverlay.style.display = 'none';
-                        }
-                    });
-                }
-                else if ("geolocation" in navigator) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            updateLocationMarker(lat, lng);
-                            renderCamarasEnFalla(lat, lng, distance, loadingOverlay);
-                        },
-                        (error) => {
-                            console.error('Error getting location:', error);
-                            showAlert('No se pudo obtener la ubicación actual. Por favor ingrese una dirección.');
-                            loadingOverlay.style.display = 'none';
-                        }
-                    );
-                } else {
-                    showAlert('Su navegador no soporta geolocalización. Por favor ingrese una dirección.');
+                } catch (e) {
+                    console.error('Error al actualizar geolocalización:', e);
+                    showAlert('Error de comunicación al obtener la ubicación del técnico.');
+                } finally {
                     loadingOverlay.style.display = 'none';
                 }
             });
@@ -641,14 +613,11 @@
     <div class="content" id="viewer-maps">
         <div class="contenedor">
             <div hidden class="json json__request"></div>
-            <div class="fila fila-distance" style="display: flex; align-items: center; gap: 12px;">
-                <input type="text" id="autocomplete-address" placeholder="Buscar dirección" class="input-distance">
-                <label for="distance">Distancia (metros):</label>
-                <input type="number" id="distance" name="distance" min="0" placeholder="Ingrese la distancia"
-                    class="input-distance">
-                <button id="calculateFailure" class="boton-azul"
-                    style="flex: 0.7; min-width: 80px; font-size: 0.95rem; padding: 7px 12px;">Calcular
-                    Falla</button>
+            <div class="fila" style="display: flex; justify-content: center; padding: 8px;">
+                <button id="actualizarGeolocalizacion" class="boton-azul"
+                    style="min-width: 200px; font-size: 1rem; padding: 10px 20px;">
+                    Actualizar geolocalización
+                </button>
             </div>
             <div class="fila" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                 <label><input type="checkbox" id="toggleCamaras"> Cámaras</label><br>

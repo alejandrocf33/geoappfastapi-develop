@@ -3,9 +3,11 @@ from pydantic import BaseModel, Field, validator
 from typing import Optional, Union, List, Dict, Any
 from ..auth import authenticate
 from ..db_access import (insertar_camara_db, insertar_cable_corporativo_db, 
-                         insertar_central_db, insertar_empalme_db, insertar_reserva_db)
+                         insertar_central_db, insertar_empalme_db, insertar_reserva_db,
+                         insertar_reporte_mal_estado_db)
 from .api_models import (CamaraResponse, CableResponse, CentralResponse, 
-                          EmpalmeResponse, ReservaResponse, PuntoGeografico)
+                          EmpalmeResponse, ReservaResponse, PuntoGeografico,
+                          ReporteMalEstado, ReporteMalEstadoResponse)
 from .error_models import responses, create_error_response, ErrorCode
 
 router = APIRouter(tags=["Operaciones de Escritura"])
@@ -20,7 +22,11 @@ class Camara(BaseModel):
     propietari: Optional[str] = Field(None, description="Propietario de la cámara")
     constructi: Optional[str] = Field(None, description="Constructor de la cámara")
     estado_cam: Optional[str] = Field(None, description="Estado de la cámara (ej. 'Operativa', 'En Mantenimiento')")
+    estado_tapa: Optional[str] = Field(None, description="Estado de la tapa (ej. 'Buena', 'En daño', 'Sin seguridad', 'Sin tapa')")
+    observaciones: Optional[str] = Field(None, description="Observaciones adicionales")
     codigo_etb: Optional[str] = Field(None, description="Código ETB de la cámara")
+    remedy_id: Optional[str] = Field(None, description="ID de tarea REMEDY para trazabilidad")
+    tecnico: Optional[str] = Field(None, description="Nombre del técnico responsable")
     latitud: float = Field(..., description="Latitud en grados decimales (WGS84)")
     longitud: float = Field(..., description="Longitud en grados decimales (WGS84)")
     geometry: Optional[str] = Field(None, description="Geometría en formato WKT (Well-Known Text), si se proporciona, sobreescribe latitud/longitud")
@@ -71,6 +77,9 @@ class CableCorporativo(BaseModel):
     calculat2: Optional[float] = Field(None, description="Cálculo adicional de la capacidad del cable")
     calculated: Optional[float] = Field(None, description="Cálculo final de la capacidad del cable")
     id_especificacion: Optional[float] = Field(None, description="Identificador de especificación del cable")
+    observaciones: Optional[str] = Field(None, description="Observaciones adicionales")
+    remedy_id: Optional[str] = Field(None, description="ID de Tarea Remedy para trazabilidad")
+    tecnico: Optional[str] = Field(None, description="Usuario técnico que realiza el registro")
     measured_l: Optional[float] = Field(None, description="Longitud medida del cable")
     # Para LineString se necesita una lista de puntos (al menos 2)
     puntos: List[PuntoGeografico] = Field([], description="Lista de puntos geográficos que conforman el cable")
@@ -140,7 +149,9 @@ class Central(BaseModel):
 
 class Empalme(BaseModel):
     # En una nueva versión de la API, se pueden agregar campos para recibir las fotos
+    # id_texto es opcional ahora, se usará 'tipo_empalme' para la lógica de negocio
     id_texto: Optional[str] = Field(None, description="Identificador textual del empalme")
+    tipo_empalme: Optional[str] = Field(None, description="Tipo de empalme (T-T, T-A, A-A)")
     name: Optional[str] = Field(None, description="Nombre del empalme")
     x: Optional[float] = Field(None, description="Nombre alternativo del empalme")
     y: Optional[float] = Field(None, description="Nombre alternativo del empalme")
@@ -167,6 +178,11 @@ class Empalme(BaseModel):
     ubicacion_empalmes_edificio_y: Optional[float] = Field(None, description="Ubicación del empalme en el edificio en el eje Y")
     ubicacion_empalmes_punto_de_acceso_x: Optional[float] = Field(None, description="Ubicación del empalme en el punto de acceso en el eje X")
     ubicacion_empalmes_punto_de_acceso_y: Optional[float] = Field(None, description="Ubicación del empalme en el punto de acceso en el eje Y")
+    cable1: Optional[str] = Field(None, description="Nombre del Cable 1 asociado")
+    cable2: Optional[str] = Field(None, description="Nombre del Cable 2 asociado")
+    observaciones: Optional[str] = Field(None, description="Observaciones adicionales")
+    remedy_id: Optional[str] = Field(None, description="ID de Tarea Remedy para trazabilidad")
+    tecnico: Optional[str] = Field(None, description="Usuario técnico que realiza el registro")
     latitud: float = Field(..., description="Latitud en grados decimales (WGS84)")
     longitud: float = Field(..., description="Longitud en grados decimales (WGS84)")
     geometry: Optional[str] = Field(None, description="Geometría en formato WKT (Well-Known Text), si se proporciona, sobreescribe latitud/longitud")
@@ -433,3 +449,22 @@ def insertar_reserva(
     # Usar el usuario del header si está disponible, de lo contrario usar el usuario autenticado
     username = user_header if user_header else auth_user
     return insertar_reserva_db(reserva, username=username)
+
+@router.post(
+    "/reporte_mal_estado", 
+    response_model=ReporteMalEstadoResponse,
+    summary="Crear reporte de mal estado",
+    description="Inserta un nuevo reporte de cierre por mal estado.",
+    response_description="Objeto de confirmación con ID generado"
+)
+def insertar_reporte_mal_estado(
+    reporte: ReporteMalEstado = Body(..., description="Datos del reporte"),
+    request: Request = None,
+    auth_user: str = Depends(authenticate),
+    user_header: Optional[str] = Header(None, description="Usuario para trazabilidad (opcional)")
+):
+    """
+    Inserta un nuevo reporte de cierre por mal estado.
+    """
+    username = user_header if user_header else auth_user
+    return insertar_reporte_mal_estado_db(reporte, username=username)

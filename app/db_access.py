@@ -151,7 +151,11 @@ def insertar_camara_db(camara, username="sistema"):
                     "estado_cam": camara.estado_cam,
                     "nombre_esp": camara.nombre_esp, 
                     "propietari": camara.propietari,
-                    "cÓdigo_etb": camara.codigo_etb
+                    "cÓdigo_etb": camara.codigo_etb,
+                    "estado_tapa": camara.estado_tapa,
+                    "observaciones": camara.observaciones,
+                    "remedy_id": camara.remedy_id,
+                    "tecnico": camara.tecnico
                 }
                 
                 # Si se proporciona geometry directamente, usarlo
@@ -235,7 +239,10 @@ def insertar_cable_corporativo_db(cable, username="sistema"):
                     "calculat2": cable.calculat2,
                     "calculated": cable.calculated,
                     "id_especif": cable.id_especificacion,
-                    "measured_l": cable.measured_l
+                    "measured_l": cable.measured_l,
+                    "observaciones": cable.observaciones,
+                    "remedy_id": cable.remedy_id,
+                    "tecnico": cable.tecnico
                 }
                 
                 # Si se proporciona geometry directamente, usarlo
@@ -386,7 +393,13 @@ def insertar_empalme_db(empalme, username="sistema"):
                     "ubicación_empalmes_edificio_x": empalme.ubicacion_empalmes_edificio_x,
                     "ubicación_empalmes_edificio_y": empalme.ubicacion_empalmes_edificio_y,
                     "ubicación_empalmes_punto_de_acceso_x": empalme.ubicacion_empalmes_punto_de_acceso_x,
-                    "ubicación_empalmes_punto_de_acceso_y": empalme.ubicacion_empalmes_punto_de_acceso_y
+                    "ubicación_empalmes_punto_de_acceso_y": empalme.ubicacion_empalmes_punto_de_acceso_y,
+                    "tipo_empalme": empalme.tipo_empalme,
+                    "cable1": empalme.cable1,
+                    "cable2": empalme.cable2,
+                    "observaciones": empalme.observaciones,
+                    "remedy_id": empalme.remedy_id,
+                    "tecnico": empalme.tecnico
                 }
                 
                 # Si se proporciona geometry directamente, usarlo
@@ -487,6 +500,46 @@ def insertar_reserva_db(reserva, username="sistema"):
                 
         return {
             "message": "Reserva insertada correctamente",
+            "id": generated_id
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def insertar_reporte_mal_estado_db(reporte, username="sistema"):
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                props = {
+                    "numero_cable": reporte.numero_cable,
+                    "nivel_dano": reporte.nivel_dano,
+                    "direccion": reporte.direccion,
+                    "observaciones": reporte.observaciones,
+                    "remedy_id": reporte.remedy_id,
+                    "tecnico": reporte.tecnico
+                }
+                
+                if reporte.geometry:
+                    wkt_geometry = reporte.geometry
+                else:
+                    wkt_geometry = f"POINT({reporte.longitud} {reporte.latitud})"
+                
+                import json
+                props_json = json.dumps(props)
+                
+                cur.execute(
+                    """
+                    INSERT INTO reportes_mal_estado (geom, propiedades, created_by, updated_by, estado, is_initial_load)
+                    VALUES (ST_GeomFromText(%s, 4326), %s::jsonb, %s, %s, 'pendiente', false)
+                    RETURNING id
+                    """,
+                    (wkt_geometry, props_json, username, username)
+                )
+                
+                generated_id = cur.fetchone()[0]
+                conn.commit()
+                
+        return {
+            "message": "Reporte de mal estado registrado correctamente",
             "id": generated_id
         }
     except Exception as e:

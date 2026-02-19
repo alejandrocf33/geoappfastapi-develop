@@ -43,3 +43,7 @@ class Empalmes(Base, BaseFeaturesTable):
 class Reservas(Base, BaseFeaturesTable):
     __tablename__ = 'reservas'
     geom = Column(Geometry('POINT', srid=4326))
+
+class ReportesMalEstado(Base, BaseFeaturesTable):
+    __tablename__ = 'reportes_mal_estado'
+    geom = Column(Geometry('POINT', srid=4326))

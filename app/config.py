@@ -29,3 +29,8 @@ ORACLE_REFERER_PATTERN = os.getenv(
 )
 
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+# Credenciales Oracle Field Service (ETA) - Geolocalización de técnico
+ETA_BASE_URL = os.getenv("ETA_BASE_URL", "")
+ETA_USERNAME = os.getenv("ETA_USERNAME", "")
+ETA_PASSWORD = os.getenv("ETA_PASSWORD", "")

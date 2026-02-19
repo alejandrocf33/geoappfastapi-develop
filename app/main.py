@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
-from .routes import cache_routes, logic_routes, write_routes
+from .routes import cache_routes, logic_routes, write_routes, eta_routes
 from .routes.api_models import ErrorResponse, ErrorCode
 import traceback
 
@@ -146,3 +146,4 @@ async def general_exception_handler(request: Request, exc: Exception):
 app.include_router(cache_routes.router, prefix="/api")
 app.include_router(logic_routes.router, prefix="/api")
 app.include_router(write_routes.router, prefix="/api")
+app.include_router(eta_routes.router, prefix="/api")

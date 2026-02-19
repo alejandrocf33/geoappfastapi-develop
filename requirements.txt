@@ -7,3 +7,4 @@ python-dotenv
 geoalchemy2
 SQLAlchemy
 python-multipart
+app

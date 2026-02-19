@@ -298,3 +298,40 @@ class LineaEnRutaRedResponse(BaseModel):
                 "distancia_solicitada": 150
             }
         }
+
+class ReporteMalEstado(BaseModel):
+    numero_cable: Optional[str] = Field(None, description="Número de identificación del cable")
+    nivel_dano: Optional[str] = Field(None, description="Nivel de daño (Alto, Medio, Bajo)")
+    direccion: Optional[str] = Field(None, description="Dirección del reporte")
+    observaciones: Optional[str] = Field(None, description="Observaciones adicionales sobre el daño")
+    remedy_id: Optional[str] = Field(None, description="ID de tarea REMEDY para trazabilidad")
+    tecnico: Optional[str] = Field(None, description="Nombre del técnico que realiza el reporte")
+    latitud: float = Field(..., description="Latitud en grados decimales (WGS84)")
+    longitud: float = Field(..., description="Longitud en grados decimales (WGS84)")
+    geometry: Optional[str] = Field(None, description="Geometría en formato WKT")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "numero_cable": "CABLE-999",
+                "nivel_dano": "Alto",
+                "direccion": "Av. Siempre Viva 123",
+                "observaciones": "Caja rota y expuesta",
+                "remedy_id": "INC-12345",
+                "tecnico": "Juan Pérez",
+                "latitud": 4.6565,
+                "longitud": -74.1010
+            }
+        }
+
+class ReporteMalEstadoResponse(BaseModel):
+    message: str = Field(..., description="Mensaje de confirmación")
+    id: int = Field(..., description="ID generado para el reporte")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "message": "Reporte de mal estado registrado correctamente",
+                "id": 45
+            }
+        }
