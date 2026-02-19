@@ -11,8 +11,10 @@ __pycache__/
 # Environment / virtualenv
 env/
 venv/
+venv_geo/
 ENV/
 .venv/
+pyvenv.cfg
 
 # Distribution / packaging
 build/
@@ -20,15 +22,18 @@ dist/
 *.egg-info/
 .eggs/
 
-# VSCode settings
+# IDE settings
 .vscode/
-
-# PyCharm settings
 .idea/
+
+# Claude Code / MCP
+.claude/
+.mcp.json
 
 # Python environment variables
 .env
 .env.*
+!.env.example
 
 # mypy cache
 .mypy_cache/
@@ -43,10 +48,15 @@ htmlcov/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
-# Other files to ignore
+# SQL session files (VSCode)
+*.session.sql
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Other
 bin/
 lib/
-log.txt
 lib64
-pyvenv.cfg
+log.txt

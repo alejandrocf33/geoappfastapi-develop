@@ -1,5 +1,4 @@
-# filepath: d:\Proyecto\geoapis\SEQUENCE_GUIDE.md
-# Guía para el Manejo de Secuencias en PostgreSQL
+# Manejo de Secuencias en PostgreSQL
 
 Este documento proporciona una guía detallada para solucionar y prevenir problemas relacionados con las secuencias de ID en la base de datos PostgreSQL de GeoAPIs.
 

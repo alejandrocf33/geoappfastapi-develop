@@ -508,59 +508,6 @@
                 });
             });
 
-            // Botón "Actualizar geolocalización" — obtiene posición del técnico vía ETA/OFS
-            document.getElementById('actualizarGeolocalizacion').addEventListener('click', async () => {
-                const loadingOverlay = document.getElementById('loading-overlay');
-                loadingOverlay.style.display = 'flex';
-
-                const activityId = window.activityCoords && window.activityCoords.aid;
-                if (!activityId) {
-                    loadingOverlay.style.display = 'none';
-                    showAlert('No se encontró ID de actividad del plugin OFS.');
-                    return;
-                }
-
-                try {
-                    const res = await fetchWithAuth(`${API_BASE_URL}/api/eta/ubicacion-tecnico?activity_id=${activityId}`);
-                    const data = await res.json();
-
-                    if (!res.ok) {
-                        showAlert('Error al obtener ubicación: ' + (data.detail || res.status));
-                        return;
-                    }
-
-                    const lat = parseFloat(data.lat);
-                    const lng = parseFloat(data.lng);
-
-                    if (isNaN(lat) || isNaN(lng)) {
-                        showAlert('Las coordenadas del técnico no son válidas.');
-                        return;
-                    }
-
-                    // Limpiar marcador anterior del técnico
-                    if (window.tecnicoMarker) window.tecnicoMarker.setMap(null);
-
-                    window.tecnicoMarker = new google.maps.Marker({
-                        position: { lat, lng },
-                        map: window.map,
-                        title: 'Técnico',
-                        icon: {
-                            url: 'https://cdn-icons-png.flaticon.com/512/25/25694.png',
-                            scaledSize: new google.maps.Size(24, 24),
-                        }
-                    });
-
-                    window.map.setCenter({ lat, lng });
-                    window.map.setZoom(17);
-
-                } catch (e) {
-                    console.error('Error al actualizar geolocalización:', e);
-                    showAlert('Error de comunicación al obtener la ubicación del técnico.');
-                } finally {
-                    loadingOverlay.style.display = 'none';
-                }
-            });
-
             // After map is initialized, process any pending activity data
             if (window.activityCoords) {
                 const { lat, lng, distancia } = window.activityCoords;
@@ -613,12 +560,6 @@
     <div class="content" id="viewer-maps">
         <div class="contenedor">
             <div hidden class="json json__request"></div>
-            <div class="fila" style="display: flex; justify-content: center; padding: 8px;">
-                <button id="actualizarGeolocalizacion" class="boton-azul"
-                    style="min-width: 200px; font-size: 1rem; padding: 10px 20px;">
-                    Actualizar geolocalización
-                </button>
-            </div>
             <div class="fila" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                 <label><input type="checkbox" id="toggleCamaras"> Cámaras</label><br>
                 <label><input type="checkbox" id="togglePostes"> Postes</label><br>

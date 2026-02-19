@@ -102,15 +102,7 @@ Los códigos de estado HTTP indican el resultado de la operación:
 
 ## Nota sobre secuencias de ID
 
-Cuando se crea un nuevo registro mediante los endpoints POST, el sistema automáticamente asigna un ID utilizando secuencias de PostgreSQL. Si experimentas errores de clave primaria duplicada después de cargar datos iniciales o hacer inserciones manuales con IDs específicos, puedes restablecer las secuencias ejecutando:
-
-```bash
-python -m app.reset_sequences
-```
-
-Este script actualiza todas las secuencias de ID para que comiencen desde el máximo ID existente + 1, evitando conflictos de clave primaria en futuras inserciones.
-
-Los errores incluyen información detallada sobre el problema en el cuerpo de la respuesta.
+Si experimentas errores de clave primaria duplicada al crear registros, consulta la [guia de manejo de secuencias](manejo-secuencias.md).
 
 ## Personalización
 
