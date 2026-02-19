@@ -16,6 +16,7 @@ class Camara(BaseModel):
     # En una nueva versión de la API, se pueden agregar campos para recibir las fotos
     type: Optional[str] = Field(None, description="Tipo de cámara (ej. 'Subterránea', 'Aérea', 'Pedestal')")
     id_texto: Optional[str] = Field(None, description="Identificador textual de la cámara")
+    marquillado: Optional[str] = Field(None, description="Indica si la cámara está marquillada (SÍ/NO)")
     ubicacion: Optional[str] = Field(None, description="Dirección o ubicación de la cámara")
     nombre_esp: Optional[str] = Field(None, description="Nombre especial de la cámara")
     apertura: Optional[str] = Field(None, description="Tipo de apertura de la cámara")
