@@ -402,6 +402,23 @@ HTTP 200 OK
 
 Para verificar que los datos se guardaron correctamente, se recomienda usar herramientas SQL como **pgAdmin 4** para ejecutar consultas directamente en la base de datos.
 
+> ⚠️ **ADVERTENCIA - Migración de Esquema Requerida**
+>
+> Si al ejecutar consultas en la tabla `reportes_mal_estado` obtienes errores como:
+>
+> - `ERROR: column "estado" does not exist`
+> - `ERROR: column "updated_at" does not exist`
+> - `ERROR: column "created_at" does not exist`
+>
+> Debes ejecutar primero la migración de esquema:
+>
+> ```sql
+> -- Ejecutar el contenido completo del archivo:
+> -- sql/fix_reportes_mal_estado_schema.sql
+> ```
+>
+> Esta migración agrega las columnas faltantes de `BaseFeaturesTable` que son necesarias para el correcto funcionamiento del sistema. Ver [Database Schema](database-schema.md) para más detalles.
+
 ---
 
 ### Herramientas de Testing SQL

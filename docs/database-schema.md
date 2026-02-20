@@ -233,6 +233,8 @@ graph LR
 - `PRIMARY KEY (id)`
 - `GIST INDEX ON (geom::geography)`
 
+**Nota Importante**: Esta tabla requirió una migración de esquema el 2026-02-20 para agregar columnas faltantes de `BaseFeaturesTable` (`created_at`, `updated_at`, `estado`, `created_by`, `updated_by`, `is_initial_load`). Ver `sql/fix_reportes_mal_estado_schema.sql` para detalles.
+
 ---
 
 ### 5. Centrales (`centrales`)
