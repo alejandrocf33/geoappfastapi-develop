@@ -17,7 +17,7 @@ def get_camaras_from_db(lat=None, lon=None, radio_interno=None, radio_externo=No
                     SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry,
                            ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) AS distancia
                     FROM camaras
-                    WHERE (estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado')
+                    WHERE ((estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL)
                     AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, %s)
                     AND ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) >= %s;
                 """, (lon, lat, lon, lat, radio_externo, lon, lat, radio_interno))
@@ -25,8 +25,8 @@ def get_camaras_from_db(lat=None, lon=None, radio_interno=None, radio_externo=No
                 cur.execute("""
                     SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry
                     FROM camaras
-                    WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
-                            limit 100;
+                    WHERE (estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL
+                    LIMIT 100;
                 """)
             
             features = []
@@ -50,7 +50,7 @@ def get_all_camaras_from_db():
             cur.execute("""
                 SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry
                 FROM camaras
-                WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                WHERE (estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL
             """)
             features = []
             for row in cur.fetchall():
@@ -73,7 +73,7 @@ def get_camaras_en_falla_db(lon, lat, distancia, desviacion, camaras_en_radio_id
                        ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) AS distancia
                 FROM camaras
                 WHERE ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, %s)
-                AND (estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado');
+                AND ((estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL);
                 """,
                 (lon, lat, lon, lat, distancia)
             )
@@ -99,7 +99,7 @@ def get_camaras_en_falla_db(lon, lat, distancia, desviacion, camaras_en_radio_id
                     FROM camaras
                     WHERE ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, %s + %s)
                       AND id NOT IN %s
-                      AND (estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado');
+                      AND ((estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL);
                     """,
                     (lon, lat, lon, lat, distancia, desviacion, tuple(camaras_en_radio_ids))
                 )
@@ -120,7 +120,7 @@ def get_camaras_en_falla_db(lon, lat, distancia, desviacion, camaras_en_radio_id
                            ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) AS distancia
                     FROM camaras
                     WHERE ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, %s + %s)
-                    AND (estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado');
+                    AND ((estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL);
                     """,
                     (lon, lat, lon, lat, distancia, desviacion)
                 )
@@ -552,40 +552,22 @@ def get_cables_corporativos_from_db(lat=None, lon=None, radio_interno=None, radi
             if lat is not None and lon is not None and radio_interno is not None and radio_externo is not None:
                 # Validate that inner radius is not greater than outer radius
                 if radio_interno > radio_externo:
-                    raise HTTPException(status_code=400, detail=RADIUS_ERROR_MESSAGE)# Para LineStrings, necesitamos verificar si algún punto del cable está dentro de los radios
+                    raise HTTPException(status_code=400, detail=RADIUS_ERROR_MESSAGE)
+                # ST_DWithin funciona directamente sobre LineStrings y usa índice GIST
                 cur.execute("""
-                    WITH puntos_cable AS (
-                        SELECT id, 
-                               propiedades, 
-                               geom,
-                               (ST_DumpPoints(geom)).geom as punto,
-                               distancia_metros
-                        FROM cable_corporativo
-                        WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
-                    )
-                    SELECT DISTINCT ON (id) 
-                           id, 
-                           propiedades, 
-                           ST_AsGeoJSON(geom) as geometry,
+                    SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry,
                            distancia_metros,
-                           LEAST(
-                               MIN(ST_Distance(punto::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography)) 
-                               OVER (PARTITION BY id)
-                           ) as distancia_al_punto
-                    FROM puntos_cable
-                    WHERE EXISTS (
-                        SELECT 1 
-                        FROM puntos_cable pc2 
-                        WHERE pc2.id = puntos_cable.id
-                        AND ST_DWithin(pc2.punto::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, %s)
-                        AND ST_Distance(pc2.punto::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) >= %s
-                    );
+                           ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) as distancia_al_punto
+                    FROM cable_corporativo
+                    WHERE ((estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL)
+                    AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, %s)
+                    AND ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) >= %s;
                 """, (lon, lat, lon, lat, radio_externo, lon, lat, radio_interno))
             else:
                 cur.execute("""
                     SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry, distancia_metros
                     FROM cable_corporativo
-                    WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                    WHERE (estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL
                     LIMIT 100;
                 """)
             
@@ -616,7 +598,7 @@ def get_all_cables_corporativos_from_db():
                         SUM(distancia_metros) as distancia_total,
                         COUNT(*) as cantidad_tramos
                     FROM cable_corporativo
-                    WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                    WHERE (estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL
                     GROUP BY propiedades
                 )
                 SELECT 
@@ -653,7 +635,7 @@ def get_centrales_from_db(lat=None, lon=None, radio_interno=None, radio_externo=
                     SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry,
                            ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) AS distancia
                     FROM centrales
-                    WHERE (estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado')
+                    WHERE ((estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL)
                     AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, %s)
                     AND ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) >= %s
                     ORDER BY propiedades->>'nombre' ASC;
@@ -662,7 +644,7 @@ def get_centrales_from_db(lat=None, lon=None, radio_interno=None, radio_externo=
                 cur.execute("""
                     SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry
                     FROM centrales
-                    WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                    WHERE (estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL
                     ORDER BY propiedades->>'nombre' ASC
                     LIMIT 100;
                 """)
@@ -691,7 +673,7 @@ def get_all_centrales_from_db():
             cur.execute("""
                 SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry
                 FROM centrales
-                WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                WHERE (estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL
                 ORDER BY propiedades->>'nombre' ASC
             """)
             features = []
@@ -721,7 +703,7 @@ def get_empalmes_from_db(lat=None, lon=None, radio_interno=None, radio_externo=N
                     SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry,
                            ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) AS distancia
                     FROM empalmes
-                    WHERE (estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado')
+                    WHERE ((estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL)
                     AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, %s)
                     AND ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) >= %s;
                 """, (lon, lat, lon, lat, radio_externo, lon, lat, radio_interno))
@@ -729,7 +711,7 @@ def get_empalmes_from_db(lat=None, lon=None, radio_interno=None, radio_externo=N
                 cur.execute("""
                     SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry
                     FROM empalmes
-                    WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                    WHERE (estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL
                     LIMIT 100;
                 """)
             
@@ -757,7 +739,7 @@ def get_all_empalmes_from_db():
             cur.execute("""
                 SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry
                 FROM empalmes
-                WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                WHERE (estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL
             """)
             features = []
             for row in cur.fetchall():
@@ -786,7 +768,7 @@ def get_reservas_from_db(lat=None, lon=None, radio_interno=None, radio_externo=N
                     SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry,
                            ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) AS distancia
                     FROM reservas
-                    WHERE (estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado')
+                    WHERE ((estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL)
                     AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, %s)
                     AND ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography) >= %s;
                 """, (lon, lat, lon, lat, radio_externo, lon, lat, radio_interno))
@@ -794,7 +776,7 @@ def get_reservas_from_db(lat=None, lon=None, radio_interno=None, radio_externo=N
                 cur.execute("""
                     SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry
                     FROM reservas
-                    WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                    WHERE (estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL
                     LIMIT 100;
                 """)
             
@@ -822,7 +804,7 @@ def get_all_reservas_from_db():
             cur.execute("""
                 SELECT id, propiedades, ST_AsGeoJSON(geom) as geometry
                 FROM reservas
-                WHERE estado != 'pendiente' OR estado IS NULL OR estado != 'rechazado'
+                WHERE (estado != 'pendiente' AND estado != 'rechazado') OR estado IS NULL
             """)
             features = []
             for row in cur.fetchall():
