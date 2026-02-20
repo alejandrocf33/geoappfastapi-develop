@@ -58,7 +58,8 @@ def ejecutar_scripts_sql():
             'sql/create_table_red.sql',
             'sql/create_fn_punto_en_ruta_red.sql',
             'sql/create_get_nearest_cable.sql',
-            'sql/get_cables_cercanos.sql'
+            'sql/get_cables_cercanos.sql',
+            'sql/create_trigger_updated_at.sql'
         ]
         
         for script_path in sql_scripts:

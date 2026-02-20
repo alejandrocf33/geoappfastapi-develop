@@ -42,7 +42,13 @@ def init_db():
             print("Creando tablas...")
             Base.metadata.create_all(engine)
             connection.commit()
-            
+
+            print("Creando trigger para updated_at...")
+            sql_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'sql', 'create_trigger_updated_at.sql')
+            with open(sql_path, 'r', encoding='utf-8') as f:
+                connection.execute(text(f.read()))
+            connection.commit()
+
             print("Base de datos inicializada correctamente.\n")
             
     except Exception as e:
