@@ -32,8 +32,9 @@ class PooledConnection:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._conn:
-            if exc_type:
-                self._conn.rollback()
+            # Siempre rollback para devolver la conexión en estado limpio al pool.
+            # Las escrituras hacen conn.commit() explícito antes de llegar aquí.
+            self._conn.rollback()
             _get_pool().putconn(self._conn)
         return False
 

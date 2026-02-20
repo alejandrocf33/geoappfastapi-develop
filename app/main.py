@@ -142,6 +142,25 @@ async def general_exception_handler(request: Request, exc: Exception):
         ).dict()
     )
 
+@app.on_event("startup")
+async def create_spatial_indexes():
+    """Crea índices GIST sobre geography(geom) si no existen, para que ST_DWithin use índice."""
+    from .database import get_connection
+    tables = ["camaras", "cable_corporativo", "centrales", "empalmes", "reservas", "reportes_mal_estado"]
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                for table in tables:
+                    idx_name = f"idx_{table}_geom_geog"
+                    cur.execute(f"""
+                        CREATE INDEX IF NOT EXISTS {idx_name}
+                        ON {table} USING GIST ((geom::geography));
+                    """)
+                conn.commit()
+        print("[STARTUP] Índices espaciales geography verificados/creados.")
+    except Exception as e:
+        print(f"[STARTUP] Advertencia al crear índices: {e}")
+
 # Incluir las rutas modulares
 app.include_router(cache_routes.router, prefix="/api")
 app.include_router(logic_routes.router, prefix="/api")
